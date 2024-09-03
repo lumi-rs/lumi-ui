@@ -1,13 +1,14 @@
 use enum_dispatch::enum_dispatch;
 
-use crate::backend::Backend;
+use crate::{backend::Backend, elements::window::{Window, WindowBuilder}};
 
-use super::{rectangle::RectangleBuilder, window::{Window, WindowBuilder}, Widget};
+use super::{rectangle::RectangleBuilder, root::RootBuilder, Widget};
 
 
 #[derive(Debug)]
 #[enum_dispatch(WidgetBuilderTrait)]
 pub enum WidgetBuilder {
+    Root(RootBuilder),
     Window(WindowBuilder),
     Rectangle(RectangleBuilder)
 }

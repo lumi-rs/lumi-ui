@@ -1,4 +1,4 @@
-use lumi_ui::{backend::Backend, element_builder::ElementBuilder, widgets::{rectangle::RectangleBuilder, widget_builder::WidgetBuilder, window::WindowBuilder}};
+use lumi_ui::{backend::Backend, elements::{element_builder::ElementBuilder, window::WindowBuilder}, widgets::{rectangle::RectangleBuilder, widget_builder::WidgetBuilder}};
 use simple_logger::SimpleLogger;
 
 fn main() {
@@ -10,7 +10,13 @@ fn main() {
 
     Backend::init(|backend| {
         backend.run_ui({
-            let root = ElementBuilder::root(
+            let root = ElementBuilder::root();
+            root.child(
+                WidgetBuilder::Window(WindowBuilder {
+                    ..Default::default()
+                })
+            );
+            root.child(
                 WidgetBuilder::Window(WindowBuilder {
                     ..Default::default()
                 })

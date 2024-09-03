@@ -1,16 +1,14 @@
 use enum_dispatch::enum_dispatch;
 
 pub use rectangle::Rectangle;
-use window::WindowRef;
 
 pub mod widget_builder;
-pub mod window;
+pub mod root;
 pub mod rectangle;
 
 #[enum_dispatch(WidgetTrait)]
 #[derive(Debug)]
 pub enum Widget {
-    Window(WindowRef),
     Rectangle(Rectangle)
 }
 

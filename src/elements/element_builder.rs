@@ -1,6 +1,8 @@
 use std::{fmt::Debug, sync::{Arc, RwLock, Weak}};
 
-use crate::{backend::Backend, element::{Element, ElementInner}, widgets::widget_builder::{WidgetBuilder, WidgetBuilderTrait}};
+use crate::{backend::Backend, elements::element::{Element, ElementInner}, widgets::{root::RootBuilder, widget_builder::{WidgetBuilder, WidgetBuilderTrait}}};
+
+use super::element::ElementTrait;
 
 #[derive(Debug, Clone)]
 pub struct ElementBuilder {
@@ -23,10 +25,10 @@ impl ElementBuilder {
         }
     }
 
-    pub fn root(widget: WidgetBuilder) -> Self {
+    pub fn root() -> Self {
         Self::new(
-            Vec::with_capacity(widget.expected_children()),
-            widget
+            Vec::with_capacity(1),
+            WidgetBuilder::Root(RootBuilder())
         )
     }
 
@@ -47,15 +49,25 @@ impl ElementBuilder {
         .and_then(|p| p.upgrade())
         .and_then(|p| p.get_window());
         
-        let element = Element::new(
-            parent,
-            Vec::with_capacity(children.len()),
-            inner.widget.build(backend, window.as_ref())
-        );
+        let element = match inner.widget {
+            WidgetBuilder::Root(_) => Element::root(),
+            WidgetBuilder::Window(builder) => Element::create_window(
+                backend,
+                parent,
+                Vec::with_capacity(children.len()),
+                builder
+            ),
+            widget => Element::new_widget(
+                parent,
+                Vec::with_capacity(children.len()),
+                widget.build(backend, window.as_ref())
+            ),
+        };
+
 
         // The RwLockWriteGuard needs to be dropped before we can return the element
         {
-            let mut new_children = element.inner.children.write().unwrap();
+            let mut new_children = element.inner.children().write().unwrap();
 
             *new_children = children.into_iter()
             .map(|child| child.build(backend, Some(element.weak())))

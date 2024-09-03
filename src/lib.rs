@@ -1,7 +1,6 @@
 pub mod macros;
 
 pub mod backend;
-pub mod element;
-pub mod element_builder;
+pub mod elements;
 pub mod widgets;
 pub mod signals;

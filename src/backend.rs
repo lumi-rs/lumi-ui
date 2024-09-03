@@ -1,9 +1,9 @@
 use std::{cell::RefCell, collections::HashMap};
 
 use log::info;
-use lumi2d::backend::{errors::BackendError, events::WindowEvent, windows::{BackendEvent, WindowDetails, WindowId, WindowTrait}, BackendTrait};
+use lumi2d::backend::{errors::BackendError, events::WindowEvent, windows::{BackendEvent, WindowDetails, WindowId}, BackendTrait};
 
-use crate::{element_builder::ElementBuilder, widgets::window::Window};
+use crate::elements::{element::ElementTrait, element_builder::ElementBuilder, window::{Window, WindowInner}};
 
 pub struct Backend {
     pub(crate) backend: lumi2d::backend::Backend,
@@ -22,14 +22,11 @@ impl Backend {
         })
     }
 
-    pub(crate) fn create_window(&self, details: WindowDetails) -> Window {
+    pub(crate) fn create_window_inner(&self, details: WindowDetails) -> WindowInner {
         let lumi_win = self.backend.create_window(details);
         let renderer = lumi_win.create_renderer().unwrap();
         
-        let id = lumi_win.id();
-        let window = Window::new(lumi_win, renderer);
-        self.windows.borrow_mut().insert(id, window.clone());
-        window
+        Window::create_inner(lumi_win, renderer)
     }
 
     pub fn run_ui(&self, builder: ElementBuilder) {
@@ -62,7 +59,10 @@ impl Backend {
         );
         // Needs to be handled here so self.windows is no longer borrowed.
         if let Some(true) = result {
-            self.take_window(&window).map(|win| win.close());
+            self.take_window(&window).map(|win| {
+                win.remove();
+                win.close();
+            });
             if self.windows.borrow().is_empty() {
                 self.backend.exit();
             }

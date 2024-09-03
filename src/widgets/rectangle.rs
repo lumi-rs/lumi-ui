@@ -1,6 +1,6 @@
-use crate::backend::Backend;
+use crate::{backend::Backend, elements::window::Window};
 
-use super::{widget_builder::WidgetBuilderTrait, window::Window, Widget, WidgetTrait};
+use super::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait};
 
 #[derive(Debug)]
 pub struct Rectangle {
