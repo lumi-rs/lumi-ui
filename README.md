@@ -1,2 +1,2 @@
 # lumi-ui
-A graphics library
+A declarative UI library for Rust
