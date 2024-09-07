@@ -11,22 +11,17 @@ fn main() {
     Backend::init(|backend| {
         backend.run_ui({
             let root = ElementBuilder::root();
-            root.child(
+            let window = root.child(
                 WidgetBuilder::Window(WindowBuilder {
                     ..Default::default()
                 })
             );
-            root.child(
-                WidgetBuilder::Window(WindowBuilder {
-                    ..Default::default()
-                })
-            );
-            root.child(
+            window.child(
                 WidgetBuilder::Rectangle(RectangleBuilder {})
             ).child(
                 WidgetBuilder::Rectangle(RectangleBuilder {})
             );
-            root.child(
+            window.child(
                 WidgetBuilder::Rectangle(RectangleBuilder {})
             );
 

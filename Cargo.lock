@@ -466,6 +466,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "fastrand"
+version = "2.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8c02a5121d4ea3eb16a80748c74f5549a5665e4c21333c6098f283870fbdea6"
+
+[[package]]
 name = "filetime"
 version = "0.2.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -770,6 +776,7 @@ version = "0.0.1"
 dependencies = [
  "clone-macro",
  "enum_dispatch",
+ "fastrand",
  "log",
  "lumi2d",
  "simple_logger",

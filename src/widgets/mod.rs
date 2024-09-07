@@ -1,5 +1,6 @@
 use enum_dispatch::enum_dispatch;
 
+use lumi2d::Objects;
 pub use rectangle::Rectangle;
 
 pub mod widget_builder;
@@ -16,4 +17,5 @@ pub enum Widget {
 #[enum_dispatch]
 pub trait WidgetTrait {
     fn expected_children(&self) -> usize { 1 }
+    fn get_objects(&self) -> &Objects;
 }

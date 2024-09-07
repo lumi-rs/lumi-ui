@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 clone-macro = "0.1.0"
 enum_dispatch = "0.3.13"
+fastrand = "2.1.1"
 log = "0.4.22"
 lumi2d = { git = "https://github.com/lumi-rs/lumi2d.git" }
 

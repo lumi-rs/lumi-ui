@@ -2,44 +2,46 @@ use lumi2d::{backend::{events::WindowEvent, windows::{Window as LumiWindow, Wind
 
 use std::sync::{Arc, RwLock, Weak};
 
-use crate::{backend::Backend, signals::Signal, widgets::{widget_builder::WidgetBuilderTrait, Widget}};
+use crate::{backend::Backend, signals::Signal, widgets::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait}};
 
-use super::element::{Element, ElementInner, ElementTrait};
+use super::element::*;
 
 
-pub type WindowRef = Weak<WindowElement>;
 
 #[derive(Debug, Clone)]
 pub struct Window {
     pub inner: Arc<WindowElement>
 }
 
+pub type WindowRef = Weak<WindowElement>;
+
 #[derive(Debug)]
 pub struct WindowElement {
-    pub(crate) parent: Option<Weak<ElementInner>>,
+    pub(crate) parent: Option<ElementRef>,
     pub(crate) inner: WindowInner, // TODO: Make this Send + Sync, somehow
     pub(crate) children: RwLock<Vec<Element>>
 }
 
+impl ElementRefTrait for WindowRef {
+    fn upgrade(&self) -> Option<Element> {
+        self.upgrade().map(|inner| Window { inner }.into())
+    }
+}
 
 impl ElementTrait for Window {
     fn children(&self) -> &RwLock<Vec<Element>> {
         &self.inner.children
     }
-    fn parent(&self) -> &Option<Weak<ElementInner>> {
+    fn parent(&self) -> &Option<ElementRef> {
         &self.inner.parent
-    }
-    fn remove(&self) {
-        if let Some(parent) = self.parent().as_ref().and_then(|p| p.upgrade()) {
-            let mut children = parent.children().write().unwrap();
-            let index = children.iter().position(|child| {
-                self.identifier() == child.inner.identifier()
-            });
-            children.remove(index.unwrap());
-        }
     }
     fn identifier(&self) -> u64 {
         Arc::as_ptr(&self.inner) as u64
+    }
+    fn render_into(&self, _: &mut Vec<Element>) {
+    }
+    fn weak(&self) -> ElementRef {
+        ElementRef::Window(Arc::downgrade(&self.inner))
     }
 }
 
@@ -65,7 +67,7 @@ pub struct WindowBuilder {
 }
 
 impl WidgetBuilderTrait for WindowBuilder {
-    fn build(self, _backend: &Backend, _window: Option<&Window>) -> Widget {
+    fn build(self, _: &Backend, _: Option<&Window>) -> Widget {
         unreachable!();
     }
 }
@@ -82,7 +84,7 @@ impl Window {
         WindowInner { window, renderer, state }
     }
 
-    pub(crate) fn create(inner: WindowInner, parent: Option<Weak<ElementInner>>, children: Vec<Element>) -> Window {
+    pub(crate) fn create(inner: WindowInner, parent: Option<ElementRef>, children: Vec<Element>) -> Window {
         let element = WindowElement {
             parent,
             inner,
@@ -118,6 +120,9 @@ impl Window {
                 WindowEvent::CloseRequested => {
                     return true;
                 },
+                WindowEvent::Redraw => {
+                    self.draw_children();
+                },
                 WindowEvent::WindowSize(dim) => {
                     self.inner.inner.resized(dim);
                 },
@@ -131,14 +136,33 @@ impl Window {
             }
         }
         
-        let cursor = self.inner.inner.state.cursor_pos.get();
-        self.render(vec![&Objects::rectangle(cursor.x as _, cursor.y as _, 10, 10, 0xFFFFFFFF, None)]).unwrap();
+        self.draw_children();
+        //let cursor = self.inner.inner.state.cursor_pos.get();
+        //self.render(vec![&Objects::rectangle(cursor.x as _, cursor.y as _, 10, 10, 0xFFFFFFFF, None)]).unwrap();
 
         false
     }
 
     pub fn scale(&self) -> f32 {
         self.inner.inner.window.current_scale()
+    }
+
+    fn draw_children(&self) {
+        let mut elements = Vec::new();
+
+        for child in self.children().read().unwrap().iter() {
+            child.render_into(&mut elements)
+        }
+
+        let objects = elements
+        .iter()
+        .filter_map(|element| {
+            if let Element::Widget(widget_element) = element {
+                Some(widget_element.widget().get_objects())
+            } else { None }
+        });
+
+        self.render(objects.collect()).unwrap();
     }
 }
 

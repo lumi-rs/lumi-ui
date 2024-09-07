@@ -1,8 +1,8 @@
-use std::{fmt::Debug, sync::{Arc, RwLock, Weak}};
+use std::{fmt::Debug, sync::{Arc, RwLock}};
 
-use crate::{backend::Backend, elements::element::{Element, ElementInner}, widgets::{root::RootBuilder, widget_builder::{WidgetBuilder, WidgetBuilderTrait}}};
+use crate::{backend::Backend, elements::element::Element, widgets::{root::RootBuilder, widget_builder::{WidgetBuilder, WidgetBuilderTrait}}};
 
-use super::element::ElementTrait;
+use super::element::{ElementRef, ElementTrait, ElementRefTrait};
 
 #[derive(Debug, Clone)]
 pub struct ElementBuilder {
@@ -42,7 +42,7 @@ impl ElementBuilder {
         element
     }
 
-    pub(crate) fn build(self, backend: &Backend, parent: Option<Weak<ElementInner>>) -> Element {
+    pub(crate) fn build(self, backend: &Backend, parent: Option<ElementRef>) -> Element {
         let inner = Arc::into_inner(self.inner).unwrap();
         let children = inner.children.into_inner().unwrap();
         let window = parent.as_ref()
@@ -67,7 +67,7 @@ impl ElementBuilder {
 
         // The RwLockWriteGuard needs to be dropped before we can return the element
         {
-            let mut new_children = element.inner.children().write().unwrap();
+            let mut new_children = element.children().write().unwrap();
 
             *new_children = children.into_iter()
             .map(|child| child.build(backend, Some(element.weak())))
