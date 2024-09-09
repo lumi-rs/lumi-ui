@@ -85,7 +85,7 @@ impl Drop for Backend {
 fn reverse_dedup_enums<T>(iter: impl DoubleEndedIterator<Item = T>) -> impl DoubleEndedIterator<Item = T> {
     let mut known = Vec::new();
     
-    iter.rev().map(|el| Some(el)).filter_map(move |element| {
+    iter.map(|el| Some(el)).filter_map(move |element| {
         let d = std::mem::discriminant(element.as_ref().unwrap());
         if known.contains(&d) {
             None

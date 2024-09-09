@@ -81,9 +81,7 @@ impl Element {
 
         element
     }
-}
 
-impl Element {
     pub(crate) fn new(parent: Option<ElementRef>, children: Vec<Element>, widget: Widget) -> Self {
         Self::Widget(
             WidgetElement::new(

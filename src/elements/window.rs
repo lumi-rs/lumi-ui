@@ -2,7 +2,7 @@ use lumi2d::{backend::{events::WindowEvent, windows::{Window as LumiWindow, Wind
 
 use std::sync::{Arc, RwLock, Weak};
 
-use crate::{backend::Backend, signals::Signal, widgets::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait}};
+use crate::{backend::Backend, signals::{Signal, SignalTrait}, widgets::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait}};
 
 use super::element::*;
 

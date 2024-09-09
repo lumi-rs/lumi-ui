@@ -1,4 +1,4 @@
-use lumi_ui::{backend::Backend, elements::{element_builder::ElementBuilder, window::WindowBuilder}, widgets::{rectangle::RectangleBuilder, widget_builder::WidgetBuilder}};
+use lumi_ui::{backend::Backend, elements::{element_builder::ElementBuilder, window::WindowBuilder}, signals::Signal, widgets::{rectangle::RectangleBuilder, widget_builder::WidgetBuilder}};
 use simple_logger::SimpleLogger;
 
 fn main() {
@@ -17,12 +17,18 @@ fn main() {
                 })
             );
             window.child(
-                WidgetBuilder::Rectangle(RectangleBuilder {})
+                WidgetBuilder::Rectangle(RectangleBuilder {
+                    xywh: Signal::new((100, 200, 300, 400))
+                })
             ).child(
-                WidgetBuilder::Rectangle(RectangleBuilder {})
+                WidgetBuilder::Rectangle(RectangleBuilder {
+                    xywh: Signal::new((20, 30, 40, 50))
+                })
             );
             window.child(
-                WidgetBuilder::Rectangle(RectangleBuilder {})
+                WidgetBuilder::Rectangle(RectangleBuilder {
+                    xywh: Signal::new((400, 300, 200, 100))
+                })
             );
 
             root
