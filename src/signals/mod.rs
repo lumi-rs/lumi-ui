@@ -49,7 +49,7 @@ impl<T> Signal<T, T> {
     }
 }
 
-impl<T, U> Signal<T, U> {
+impl<T: 'static, U: 'static> Signal<T, U> {
     pub fn relative(root: Signal<T, T>, map: impl Fn(&T) -> U + 'static) -> Self {
         Self::Relative(RelativeSignal::new(root, map))
     }
@@ -80,7 +80,7 @@ impl<T> Display for SignalRef<'_, T> where T: Display {
 }
 
 
-impl<T> SignalTrait<T, T> for Signal<T, T> {
+impl<T: 'static> SignalTrait<T, T> for Signal<T, T> {
     fn get(&self) -> SignalRef<T> {
         match self {
             Signal::Root(root) => root.get(),

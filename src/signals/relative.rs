@@ -10,7 +10,7 @@ pub struct RelativeSignal<T, U> {
     pub(crate) notif_slots: RwLock<Vec<NotifSlot>>
 }
 
-impl<T, U> SignalTrait<T, U> for Arc<RelativeSignal<T, U>> {
+impl<T: 'static, U: 'static> SignalTrait<T, U> for Arc<RelativeSignal<T, U>> {
     fn get(&self) -> SignalRef<U> {
         SignalRef::Owned(self.map(&self.root.get()))
     }
@@ -30,7 +30,7 @@ impl<T, U> SignalTrait<T, U> for Arc<RelativeSignal<T, U>> {
     }
 }
 
-impl<T, U> RelativeSignal<T, U> {
+impl<T: 'static, U: 'static> RelativeSignal<T, U> {
     pub fn new(root: Signal<T, T>, map: impl Fn(&T) -> U + 'static) -> Arc<Self> {
         let relative = Arc::new(Self {
             root: root.clone(),
@@ -39,10 +39,10 @@ impl<T, U> RelativeSignal<T, U> {
             notif_slots: RwLock::new(Vec::new())
         });
 
-        //let cloned = relative.clone();
-        //root.subscribe(move |data| {
-        //    cloned.invoke(data);
-        //});
+        let cloned = relative.clone();
+        root.subscribe(move |data| {
+            cloned.invoke(data);
+        });
 
         relative
     }
