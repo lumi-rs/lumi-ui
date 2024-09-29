@@ -22,7 +22,7 @@ pub struct RectangleBuilder {
 
 impl WidgetBuilderTrait for RectangleBuilder {
     fn build(self, _backend: &Backend, _window: Option<&Window>) -> Widget {
-        let (x, y, w, h) = self.xywh.get().clone();
+        let (x, y, w, h) = *self.xywh.get();
         Widget::Rectangle(Rectangle {
             rectangle: lumi2d::Objects::rectangle(x, y, w, h, 0xFFFFFFFF, None)
         })

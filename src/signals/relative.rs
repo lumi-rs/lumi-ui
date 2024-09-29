@@ -10,7 +10,7 @@ pub struct RelativeSignal<T, U> {
     pub(crate) notif_slots: RwLock<Vec<NotifSlot>>
 }
 
-impl<T: 'static, U: 'static> SignalTrait<T, U> for Arc<RelativeSignal<T, U>> {
+impl<T: 'static, U: 'static> SignalTrait<'_, T, U> for Arc<RelativeSignal<T, U>> {
     fn get(&self) -> SignalRef<U> {
         SignalRef::Owned(self.map(&self.root.get()))
     }
@@ -20,13 +20,21 @@ impl<T: 'static, U: 'static> SignalTrait<T, U> for Arc<RelativeSignal<T, U>> {
     }
 
     fn subscribe(&self, callback: impl Fn(&U) + 'static) {
+        self.subscribe_slot(Slot::new(callback));
+    }
+
+    fn subscribe_slot(&self, slot: Slot<U>) {
         let mut slots = self.slots.write().unwrap();
-        slots.push(Slot::new(callback));
+        slots.push(slot);
     }
 
     fn notify(&self, callback: impl Fn() + 'static) {
+        self.notify_slot(NotifSlot::new(callback));
+    }
+
+    fn notify_slot(&self, slot: NotifSlot) {
         let mut slots = self.notif_slots.write().unwrap();
-        slots.push(NotifSlot::new(callback));
+        slots.push(slot);
     }
 }
 

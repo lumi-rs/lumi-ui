@@ -1,6 +1,6 @@
 use std::{fmt::{Debug, Display}, ops::Deref, sync::{Arc, RwLock, RwLockReadGuard}};
 
-
+mod impl_macro;
 mod signal;
 mod relative;
 mod slots;
@@ -12,14 +12,17 @@ use slots::*;
 #[derive(Debug)]
 pub enum Signal<T, U = T> {
     Root(Arc<SignalInner<T>>),
-    Relative(Arc<RelativeSignal<T, U>>)
+    Relative(Arc<RelativeSignal<T, U>>),
 }
 
-pub trait SignalTrait<T, U> {
-    fn get(&self) -> SignalRef<U>;
+
+pub trait SignalTrait<'a, T, U> {
+    fn get(&'a self) -> SignalRef<'a, U>;
     fn set(&self, data: T);
     fn subscribe(&self, callback: impl Fn(&U) + 'static);
+    fn subscribe_slot(&self, slot: Slot<U>);
     fn notify(&self, callback: impl Fn() + 'static);
+    fn notify_slot(&self, slot: NotifSlot);
 }
 
 
@@ -59,7 +62,8 @@ impl<T: 'static, U: 'static> Signal<T, U> {
 #[derive(Debug)]
 pub enum SignalRef<'a, T> {
     RwLock(RwLockReadGuard<'a, T>),
-    Owned(T)
+    Ref(&'a T),
+    Owned(T),
 }
 
 impl<'a, T> Deref for SignalRef<'a, T> {
@@ -68,6 +72,7 @@ impl<'a, T> Deref for SignalRef<'a, T> {
     fn deref(&self) -> &Self::Target {
         match self {
             SignalRef::RwLock(guard) => guard,
+            SignalRef::Ref(r) => r,
             SignalRef::Owned(owned) => owned,
         }
     }
@@ -80,7 +85,7 @@ impl<T> Display for SignalRef<'_, T> where T: Display {
 }
 
 
-impl<T: 'static> SignalTrait<T, T> for Signal<T, T> {
+impl<T: 'static> SignalTrait<'_, T, T> for Signal<T, T> {
     fn get(&self) -> SignalRef<T> {
         match self {
             Signal::Root(root) => root.get(),
@@ -102,10 +107,24 @@ impl<T: 'static> SignalTrait<T, T> for Signal<T, T> {
         }
     }
 
+    fn subscribe_slot(&self, slot: Slot<T>) {
+        match self {
+            Signal::Root(root) => root.subscribe_slot(slot),
+            Signal::Relative(relative) => relative.subscribe_slot(slot),
+        }
+    }
+
     fn notify(&self, callback: impl Fn() + 'static) {
         match self {
             Signal::Root(root) => root.notify(callback),
             Signal::Relative(relative) => relative.notify(callback)
+        }
+    }
+
+    fn notify_slot(&self, slot: NotifSlot) {
+        match self {
+            Signal::Root(root) => root.notify_slot(slot),
+            Signal::Relative(relative) => relative.notify_slot(slot),
         }
     }
 }

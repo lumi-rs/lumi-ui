@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 
-pub(crate) struct Slot<T> {
+#[derive(Clone)]
+pub struct Slot<T> {
     callback: Arc<dyn Fn(&T) + 'static>
 }
 
@@ -17,7 +18,9 @@ impl<T> Slot<T> {
     }
 }
 
-pub(crate) struct NotifSlot {
+
+#[derive(Clone)]
+pub struct NotifSlot {
     callback: Arc<dyn Fn()>
 }
 
