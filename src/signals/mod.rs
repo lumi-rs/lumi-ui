@@ -6,7 +6,7 @@ mod relative;
 mod slots;
 
 pub use {signal::*, relative::*};
-use slots::*;
+pub use slots::*;
 
 
 #[derive(Debug)]

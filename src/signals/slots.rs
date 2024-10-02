@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 
-#[derive(Clone)]
 pub struct Slot<T> {
     callback: Arc<dyn Fn(&T) + 'static>
 }
@@ -18,8 +17,14 @@ impl<T> Slot<T> {
     }
 }
 
+impl<T> Clone for Slot<T> {
+    fn clone(&self) -> Self {
+        Self { callback: self.callback.clone() }
+    }
+}
 
-#[derive(Clone)]
+
+
 pub struct NotifSlot {
     callback: Arc<dyn Fn()>
 }
@@ -33,5 +38,11 @@ impl NotifSlot {
 
     pub fn invoke(&self) {
         self.callback.as_ref()()
+    }
+}
+
+impl Clone for NotifSlot {
+    fn clone(&self) -> Self {
+        Self { callback: self.callback.clone() }
     }
 }

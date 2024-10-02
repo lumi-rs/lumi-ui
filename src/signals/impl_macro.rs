@@ -1,7 +1,7 @@
 macro_rules! impl_signal {
     ( $(($typ:ident, $ident:ident, $alt:ident)),+ ) => {
         #[allow(unused)]
-        use crate::signals::*;
+        use crate::{signals::*, *};
 
         impl<'a: 'b, 'b, $($typ: 'static),+>
             SignalTrait<'a, ($($typ),+), ($(SignalRef<'b, $typ>),+)>
@@ -23,16 +23,32 @@ macro_rules! impl_signal {
                 )+
             }
 
-            fn subscribe(&self, _callback: impl Fn(&($(SignalRef<'b, $typ>),+)) + 'static) {
-                // let ($($ident),+) = self;
-
-                // TODO
+            fn subscribe(&self, callback: impl Fn(&($(SignalRef<'b, $typ>),+)) + 'static) {
+                self.subscribe_slot(Slot::new(callback))
             }
 
-            fn subscribe_slot(&self, _slot: Slot<($(SignalRef<'b, $typ>),+)>) {
-                //let ($($ident),+) = self;
+            fn subscribe_slot(&self, slot: Slot<($(SignalRef<'b, $typ>),+)>) {
+                let ($($ident),+) = self;
+                $(let $alt = $ident.clone();)+
 
-                // TODO
+                // Yes, this is bad. But the compiler hates me, and I hate lifetimes, and this seems to work, so...
+                let cb: Slot<($(SignalRef<$typ>),+)> = unsafe { std::mem::transmute(slot) };
+
+                let func = move || {
+                    let cb: Slot<($(SignalRef<$typ>),+)> = unsafe { std::mem::transmute(cb.clone()) };
+
+                    let args = ($(
+                        $alt.get()
+                    ),+);
+
+                    cb.invoke(&args);
+                };
+
+                let slot = NotifSlot::new(func);
+        
+                $({
+                    $ident.notify_slot(slot.clone());
+                })+
             }
         
             fn notify(&self, callback: impl Fn() + 'static) {
@@ -52,10 +68,8 @@ macro_rules! impl_signal {
 }
 
 
-
 impl_signal!((T, a, b), (U, c, d));
 impl_signal!((T, a, b), (U, c, d), (V, e, f));
 impl_signal!((T, a, b), (U, c, d), (V, e, f), (W, g, h));
 impl_signal!((T, a, b), (U, c, d), (V, e, f), (W, g, h), (X, i, j));
 impl_signal!((T, a, b), (U, c, d), (V, e, f), (W, g, h), (X, i, j), (Y, k, l));
-
