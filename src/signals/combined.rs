@@ -63,6 +63,18 @@ macro_rules! impl_signal {
                     $ident.notify_slot(slot.clone());
                 )+
             }
+
+            fn relative<Rel: 'static>(&'b self, map_fn: impl Fn(&($(SignalRef<'b, $typ>),+)) -> Rel + 'static) -> Signal<Rel> {
+                let signal = Signal::new(map_fn(&self.get()));
+
+                let clone = signal.clone();
+                self.subscribe(move |data| {
+                    let result = map_fn(data);
+                    clone.set(result);
+                });
+        
+                signal
+            }
         }
     };
 }

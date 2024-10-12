@@ -1,18 +1,17 @@
 use std::{fmt::{Debug, Display}, ops::Deref, sync::{Arc, RwLock, RwLockReadGuard}};
 
-mod impl_macro;
+mod combined;
 mod signal;
 mod relative;
 mod slots;
 
-pub use {signal::*, relative::*};
-pub use slots::*;
+pub use {slots::*, signal::*};
 
 
 #[derive(Debug)]
-pub enum Signal<T, U = T> {
+pub enum Signal<T> {
     Root(Arc<SignalInner<T>>),
-    Relative(Arc<RelativeSignal<T, U>>),
+    //Relative(Arc<RelativeSignal<T, U>>),
 }
 
 
@@ -23,38 +22,34 @@ pub trait SignalTrait<'a, T, U> {
     fn subscribe_slot(&self, slot: Slot<U>);
     fn notify(&self, callback: impl Fn() + 'static);
     fn notify_slot(&self, slot: NotifSlot);
+    #[allow(unused)]
+    fn relative<V: 'static>(&'a self, map_fn: impl Fn(&U) -> V + 'static) -> Signal<V> { unimplemented!() }
 }
 
 
-impl<T, U> Default for Signal<T, U> where SignalInner<T>: Default {
+impl<T> Default for Signal<T> where SignalInner<T>: Default {
     fn default() -> Self {
         Self::Root(Default::default())
     }
 }
 
-impl<T, U> Clone for Signal<T, U> {
+impl<T> Clone for Signal<T> {
     fn clone(&self) -> Self {
         match self {
             Signal::Root(inner) => Signal::Root(inner.clone()),
-            Signal::Relative(relative) => Signal::Relative(relative.clone())
+            //Signal::Relative(relative) => Signal::Relative(relative.clone())
         }
     }
 }
 
 
-impl<T> Signal<T, T> {
+impl<T> Signal<T> {
     pub fn new(data: T) -> Self {
         Self::Root(Arc::new(SignalInner {
             data: RwLock::new(data),
             slots: RwLock::new(Vec::new()),
             notif_slots: RwLock::new(Vec::new())
         }))
-    }
-}
-
-impl<T: 'static, U: 'static> Signal<T, U> {
-    pub fn relative(root: Signal<T, T>, map: impl Fn(&T) -> U + 'static) -> Self {
-        Self::Relative(RelativeSignal::new(root, map))
     }
 }
 
@@ -85,46 +80,58 @@ impl<T> Display for SignalRef<'_, T> where T: Display {
 }
 
 
-impl<T: 'static> SignalTrait<'_, T, T> for Signal<T, T> {
+impl<T: 'static> SignalTrait<'_, T, T> for Signal<T> {
     fn get(&self) -> SignalRef<T> {
         match self {
             Signal::Root(root) => root.get(),
-            Signal::Relative(relative) => relative.get()
+            //Signal::Relative(relative) => relative.get()
         }
     }
 
     fn set(&self, data: T) {
         match self {
             Signal::Root(root) => root.set(data),
-            Signal::Relative(relative) => relative.set(data)
+            //Signal::Relative(relative) => relative.set(data)
         }
     }
 
     fn subscribe(&self, callback: impl Fn(&T) + 'static) {
         match self {
             Signal::Root(root) => root.subscribe(callback),
-            Signal::Relative(relative) => relative.subscribe(callback)
+            //Signal::Relative(relative) => relative.subscribe(callback)
         }
     }
 
     fn subscribe_slot(&self, slot: Slot<T>) {
         match self {
             Signal::Root(root) => root.subscribe_slot(slot),
-            Signal::Relative(relative) => relative.subscribe_slot(slot),
+            //Signal::Relative(relative) => relative.subscribe_slot(slot),
         }
     }
 
     fn notify(&self, callback: impl Fn() + 'static) {
         match self {
             Signal::Root(root) => root.notify(callback),
-            Signal::Relative(relative) => relative.notify(callback)
+            //Signal::Relative(relative) => relative.notify(callback)
         }
     }
 
     fn notify_slot(&self, slot: NotifSlot) {
         match self {
             Signal::Root(root) => root.notify_slot(slot),
-            Signal::Relative(relative) => relative.notify_slot(slot),
+            //Signal::Relative(relative) => relative.notify_slot(slot),
         }
+    }
+
+    fn relative<V: 'static>(&self, map_fn: impl Fn(&T) -> V + 'static) -> Signal<V> {
+        let signal = Signal::new(map_fn(&self.get()));
+
+        let clone = signal.clone();
+        self.subscribe(move |data| {
+            let result = map_fn(data);
+            clone.set(result);
+        });
+
+        signal
     }
 }

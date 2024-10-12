@@ -4,7 +4,7 @@ use super::{NotifSlot, Signal, SignalRef, SignalTrait, Slot};
 
 
 pub struct RelativeSignal<T, U> {
-    pub(crate) root: Signal<T, T>,
+    pub(crate) root: Signal<T>,
     pub(crate) map_fn: Box<dyn Fn(&T) -> U>,
     pub(crate) slots: RwLock<Vec<Slot<U>>>,
     pub(crate) notif_slots: RwLock<Vec<NotifSlot>>
@@ -39,7 +39,7 @@ impl<T: 'static, U: 'static> SignalTrait<'_, T, U> for Arc<RelativeSignal<T, U>>
 }
 
 impl<T: 'static, U: 'static> RelativeSignal<T, U> {
-    pub fn new(root: Signal<T, T>, map: impl Fn(&T) -> U + 'static) -> Arc<Self> {
+    pub fn new(root: Signal<T>, map: impl Fn(&T) -> U + 'static) -> Arc<Self> {
         let relative = Arc::new(Self {
             root: root.clone(),
             map_fn: Box::new(map),

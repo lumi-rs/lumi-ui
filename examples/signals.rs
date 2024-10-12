@@ -17,10 +17,11 @@ fn main() {
 
     println!("Getting value...");
     let a = combined.get();
+    println!("Got: {a:?}");
     drop(a);
 
-    println!("Testing relative... nyi");
-    
+    println!("Testing relative...");
+    combined.relative(|a| println!("from relative: {a:?}"));
 
     one.set(5);
     one.set(7);
@@ -29,10 +30,10 @@ fn main() {
 
 fn _old_main() {
     let a = Signal::new(2);
-    let relative = Signal::relative(a.clone(), |a| a + 4);
+    let relative = Signal::relative(&a.clone(), |a| a.to_string());
     let b = Signal::new("hola");
     
-    let _ret = use_signals!([a, b, relative] |a, b, relative| {
+    use_signals!([a, b, relative] |a, b, relative| {
         println!("{a} -> {relative}; {b}")
     });
 
