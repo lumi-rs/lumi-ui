@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap};
 use log::info;
 use lumi2d::backend::{errors::BackendError, events::WindowEvent, windows::{BackendEvent, WindowDetails, WindowId}, BackendTrait};
 
-use crate::elements::{element::ElementTrait, element_builder::ElementBuilder, window::{Window, WindowInner}};
+use crate::elements::{element::ElementTrait, element_builder::ElementBuilder, window::{Window, WindowInner, WindowState}};
 
 pub struct Backend {
     pub(crate) backend: lumi2d::backend::Backend,
@@ -22,11 +22,11 @@ impl Backend {
         })
     }
 
-    pub(crate) fn create_window_inner(&self, details: WindowDetails) -> WindowInner {
+    pub(crate) fn create_window_inner(&self, details: WindowDetails, state: WindowState) -> WindowInner {
         let lumi_win = self.backend.create_window(details);
         let renderer = lumi_win.create_renderer().unwrap();
         
-        Window::create_inner(lumi_win, renderer)
+        Window::create_inner(lumi_win, renderer, state)
     }
 
     pub fn run_ui(&self, builder: ElementBuilder) {

@@ -64,7 +64,17 @@ pub enum SignalRef<'a, T> {
 impl<'a, T> Deref for SignalRef<'a, T> {
     type Target = T;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &T {
+        match self {
+            SignalRef::RwLock(guard) => guard,
+            SignalRef::Ref(r) => r,
+            SignalRef::Owned(owned) => owned,
+        }
+    }
+}
+
+impl<'a, T> AsRef<T> for SignalRef<'a, T> {
+    fn as_ref(&self) -> &T {
         match self {
             SignalRef::RwLock(guard) => guard,
             SignalRef::Ref(r) => r,
@@ -76,6 +86,16 @@ impl<'a, T> Deref for SignalRef<'a, T> {
 impl<T> Display for SignalRef<'_, T> where T: Display {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         self.deref().fmt(f)
+    }
+}
+
+impl<'a, T: Clone> SignalRef<'a, T> {
+    pub fn cloned(&self) -> T {
+        match self {
+            SignalRef::RwLock(guard) => (*guard).clone(),
+            SignalRef::Ref(r) => (*r).clone(),
+            SignalRef::Owned(owned) => owned.clone(),
+        }
     }
 }
 

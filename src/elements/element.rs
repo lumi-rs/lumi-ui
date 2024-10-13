@@ -57,7 +57,7 @@ impl Element {
     }
 
     pub(crate) fn create_window(backend: &Backend, parent: Option<ElementRef>, children: Vec<Element>, builder: WindowBuilder) -> Self {
-        let inner = backend.create_window_inner(builder.details);
+        let inner = backend.create_window_inner(builder.details, builder.state);
         let window = Window::create(inner, parent, children);
 
         window.render(Vec::new()).unwrap(); // Draw once, otherwise the window won't be shown yet on some platforms

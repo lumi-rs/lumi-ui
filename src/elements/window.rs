@@ -1,6 +1,6 @@
-use lumi2d::{backend::{events::WindowEvent, windows::{Window as LumiWindow, WindowDetails, WindowId, WindowTrait}}, renderer::{RResult, Renderer, RendererTrait}, structs::{Dimensions, Position}, Objects};
+use lumi2d::{backend::{events::WindowEvent, windows::{Window as LumiWindow, WindowDetails, WindowId, WindowTrait}}, renderer::{RResult, Renderer, RendererTrait}, structs::{Dimensions, Position}, Object};
 
-use std::sync::{Arc, RwLock, Weak};
+use std::{ops::Deref, sync::{Arc, RwLock, Weak}};
 
 use crate::{backend::Backend, signals::{Signal, SignalTrait}, widgets::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait}};
 
@@ -55,15 +55,16 @@ pub struct WindowInner {
 
 #[derive(Debug, Clone)]
 pub struct WindowState {
-    dimensions: Signal<Dimensions>,
-    cursor_pos: Signal<Position<f64>>,
-    focused: Signal<bool>,
+    pub dimensions: Signal<Dimensions>,
+    pub cursor_pos: Signal<Position<f64>>,
+    pub focused: Signal<bool>,
 }
 
 
 #[derive(Debug, Default)]
 pub struct WindowBuilder {
-    pub details: WindowDetails
+    pub details: WindowDetails,
+    pub state: WindowState
 }
 
 impl WidgetBuilderTrait for WindowBuilder {
@@ -74,13 +75,7 @@ impl WidgetBuilderTrait for WindowBuilder {
 
 
 impl Window {
-    pub(crate) fn create_inner(window: LumiWindow, renderer: Renderer) -> WindowInner {
-        let state = WindowState {
-            dimensions: Signal::new(window.dimensions()),
-            cursor_pos: Signal::new(Position::new(0.0, 0.0)),
-            focused: Signal::new(false)
-        };
-
+    pub(crate) fn create_inner(window: LumiWindow, renderer: Renderer, state: WindowState) -> WindowInner {
         WindowInner { window, renderer, state }
     }
 
@@ -108,7 +103,7 @@ impl Window {
         Arc::into_inner(self.inner).unwrap().inner.close();
     }
 
-    pub(crate) fn render(&self, objects: Vec<&Objects>) -> RResult<()>{
+    pub(crate) fn render(&self, objects: Vec<&Object>) -> RResult<()>{
         let inner = &self.inner.inner;
         inner.renderer.render(&inner.window, objects)
     }
@@ -162,7 +157,9 @@ impl Window {
             } else { None }
         });
 
-        self.render(objects.collect()).unwrap();
+        let refs: Vec<_> = objects.collect();
+
+        self.render(refs.iter().map(|o| o.deref()).collect()).unwrap();
     }
 }
 
@@ -178,5 +175,16 @@ impl WindowInner {
     fn resized(&self, size: Dimensions) {
         self.state.dimensions.set(size);
         self.renderer.recreate(&self.window);
+    }
+}
+
+
+impl Default for WindowState {
+    fn default() -> Self {
+        Self {
+            dimensions: Signal::new(Dimensions::new(0, 0)),
+            cursor_pos: Signal::new(Position::new(0.0, 0.0)),
+            focused: Signal::new(false)
+        }
     }
 }
