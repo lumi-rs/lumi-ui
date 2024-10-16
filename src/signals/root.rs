@@ -1,15 +1,25 @@
-use std::{fmt::Debug, sync::{Arc, RwLock}};
+use std::{fmt::Debug, sync::RwLock};
 
 use super::{NotifSlot, SignalRef, SignalTrait, Slot};
 
 
-pub struct SignalInner<T> {
+pub struct RootSignal<T> {
     pub(crate) data: RwLock<T>,
     pub(crate) slots: RwLock<Vec<Slot<T>>>,
     pub(crate) notif_slots: RwLock<Vec<NotifSlot>>
 }
 
-impl<T> SignalTrait<'_, T, T> for Arc<SignalInner<T>> {
+impl<T> RootSignal<T> {
+    pub fn new(data: T) -> Self {
+        Self {
+            data: RwLock::new(data),
+            slots: RwLock::new(Vec::new()),
+            notif_slots: RwLock::new(Vec::new())
+        }
+    }
+}
+
+impl<T> SignalTrait<'_, T, T> for RootSignal<T> {
     fn get(&self) -> SignalRef<T> {
         SignalRef::RwLock(self.data.read().unwrap())
     }
@@ -46,7 +56,7 @@ impl<T> SignalTrait<'_, T, T> for Arc<SignalInner<T>> {
     }
 }
 
-impl<T: Debug> Debug for SignalInner<T> {
+impl<T: Debug> Debug for RootSignal<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("SignalInner")
         .field("data", &self.data)

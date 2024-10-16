@@ -1,16 +1,20 @@
-use std::{fmt::{Debug, Display}, ops::Deref, sync::{Arc, RwLock, RwLockReadGuard}};
+use std::{fmt::{Debug, Display}, ops::Deref, sync::{Arc, RwLockReadGuard}};
 
 mod combined;
-mod signal;
+mod root;
+mod r#const;
 mod relative;
 mod slots;
 
-pub use {slots::*, signal::*};
+use r#const::ConstSignal;
+
+pub use {slots::*, root::*};
 
 
 #[derive(Debug)]
 pub enum Signal<T> {
-    Root(Arc<SignalInner<T>>),
+    Root(Arc<RootSignal<T>>),
+    Const(Arc<ConstSignal<T>>)
     //Relative(Arc<RelativeSignal<T, U>>),
 }
 
@@ -27,7 +31,7 @@ pub trait SignalTrait<'a, T, U> {
 }
 
 
-impl<T> Default for Signal<T> where SignalInner<T>: Default {
+impl<T> Default for Signal<T> where RootSignal<T>: Default {
     fn default() -> Self {
         Self::Root(Default::default())
     }
@@ -37,6 +41,7 @@ impl<T> Clone for Signal<T> {
     fn clone(&self) -> Self {
         match self {
             Signal::Root(inner) => Signal::Root(inner.clone()),
+            Signal::Const(inner) => Signal::Const(inner.clone())
             //Signal::Relative(relative) => Signal::Relative(relative.clone())
         }
     }
@@ -45,10 +50,14 @@ impl<T> Clone for Signal<T> {
 
 impl<T> Signal<T> {
     pub fn new(data: T) -> Self {
-        Self::Root(Arc::new(SignalInner {
-            data: RwLock::new(data),
-            slots: RwLock::new(Vec::new()),
-            notif_slots: RwLock::new(Vec::new())
+        Self::Root(
+            Arc::new(RootSignal::new(data))
+        )
+    }
+
+    pub fn constant(data: T) -> Self {
+        Self::Const(Arc::new(ConstSignal {
+            data
         }))
     }
 }
@@ -104,6 +113,7 @@ impl<T: 'static> SignalTrait<'_, T, T> for Signal<T> {
     fn get(&self) -> SignalRef<T> {
         match self {
             Signal::Root(root) => root.get(),
+            Signal::Const(inner) => inner.get(),
             //Signal::Relative(relative) => relative.get()
         }
     }
@@ -111,6 +121,7 @@ impl<T: 'static> SignalTrait<'_, T, T> for Signal<T> {
     fn set(&self, data: T) {
         match self {
             Signal::Root(root) => root.set(data),
+            Signal::Const(inner) => inner.set(data),
             //Signal::Relative(relative) => relative.set(data)
         }
     }
@@ -118,6 +129,7 @@ impl<T: 'static> SignalTrait<'_, T, T> for Signal<T> {
     fn subscribe(&self, callback: impl Fn(&T) + 'static) {
         match self {
             Signal::Root(root) => root.subscribe(callback),
+            Signal::Const(inner) => inner.subscribe(callback),
             //Signal::Relative(relative) => relative.subscribe(callback)
         }
     }
@@ -125,6 +137,7 @@ impl<T: 'static> SignalTrait<'_, T, T> for Signal<T> {
     fn subscribe_slot(&self, slot: Slot<T>) {
         match self {
             Signal::Root(root) => root.subscribe_slot(slot),
+            Signal::Const(inner) => inner.subscribe_slot(slot),
             //Signal::Relative(relative) => relative.subscribe_slot(slot),
         }
     }
@@ -132,6 +145,7 @@ impl<T: 'static> SignalTrait<'_, T, T> for Signal<T> {
     fn notify(&self, callback: impl Fn() + 'static) {
         match self {
             Signal::Root(root) => root.notify(callback),
+            Signal::Const(inner) => inner.notify(callback),
             //Signal::Relative(relative) => relative.notify(callback)
         }
     }
@@ -139,19 +153,26 @@ impl<T: 'static> SignalTrait<'_, T, T> for Signal<T> {
     fn notify_slot(&self, slot: NotifSlot) {
         match self {
             Signal::Root(root) => root.notify_slot(slot),
+            Signal::Const(inner) => inner.notify_slot(slot),
             //Signal::Relative(relative) => relative.notify_slot(slot),
         }
     }
 
     fn relative<V: 'static>(&self, map_fn: impl Fn(&T) -> V + 'static) -> Signal<V> {
-        let signal = Signal::new(map_fn(&self.get()));
+        match self {
+            Signal::Const(inner) => inner.relative(map_fn),
+            _ => {
+                let signal = Signal::new(map_fn(&self.get()));
 
-        let clone = signal.clone();
-        self.subscribe(move |data| {
-            let result = map_fn(data);
-            clone.set(result);
-        });
+                let clone = signal.clone();
+                self.subscribe(move |data| {
+                    let result = map_fn(data);
+                    clone.set(result);
+                });
+        
+                signal
+            }
+        }
 
-        signal
     }
 }
