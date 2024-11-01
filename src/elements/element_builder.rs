@@ -46,7 +46,7 @@ impl ElementBuilder {
         let inner = Arc::into_inner(self.inner).unwrap();
         let children = inner.children.into_inner().unwrap();
         let window = parent.as_ref()
-        .and_then(|p| p.upgrade())
+        .and_then(|p| p.upgrade_element())
         .and_then(|p| p.get_window());
         
         let element = match inner.widget {

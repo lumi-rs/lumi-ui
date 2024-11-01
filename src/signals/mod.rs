@@ -31,9 +31,13 @@ pub trait SignalTrait<'a, T, U> {
 }
 
 
-impl<T> Default for Signal<T> where RootSignal<T>: Default {
+impl<T> Default for Signal<T> where T: Default {
     fn default() -> Self {
-        Self::Root(Default::default())
+        Self::Root(
+            Arc::new(
+                RootSignal::new(T::default())
+            )
+        )
     }
 }
 

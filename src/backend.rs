@@ -1,12 +1,12 @@
-use std::{cell::RefCell, collections::HashMap};
+use std::{cell::RefCell, collections::HashMap, sync::{Arc, RwLockReadGuard, Weak}};
 
 use log::info;
-use lumi2d::backend::{errors::BackendError, events::WindowEvent, windows::{BackendEvent, WindowDetails, WindowId}, BackendTrait};
+use lumi2d::backend::{errors::BackendError, events::WindowEvent, renderer_data::{RendererData, RendererDataTrait}, windowing::window::{BackendEvent, WindowDetails, WindowId}, BackendTrait};
 
 use crate::elements::{element::ElementTrait, element_builder::ElementBuilder, window::{Window, WindowInner, WindowState}};
 
 pub struct Backend {
-    pub(crate) backend: lumi2d::backend::Backend,
+    pub(crate) backend: Arc<lumi2d::backend::Backend>,
     pub(crate) windows: RefCell<HashMap<WindowId, Window>>
 }
 
@@ -15,7 +15,7 @@ impl Backend {
         info!("Initializing windowing backend...");
         lumi2d::backend::Backend::create(move |lumi| {
             let backend = Self {
-                backend: lumi,
+                backend: Arc::new(lumi),
                 windows: RefCell::new(HashMap::new())
             };
             callback(backend);
@@ -24,9 +24,17 @@ impl Backend {
 
     pub(crate) fn create_window_inner(&self, details: WindowDetails, state: WindowState) -> WindowInner {
         let lumi_win = self.backend.create_window(details);
-        let renderer = lumi_win.create_renderer().unwrap();
+        let renderer = lumi_win.create_renderer(&self.backend).unwrap();
         
         Window::create_inner(lumi_win, renderer, state)
+    }
+
+    pub fn register_font(&self, alias: &str, font_bytes: &[u8]) {
+        self.renderer_data().register_font(font_bytes, alias);
+    }
+
+    pub fn register_default_font(&self, alias: &str, font_bytes: &[u8]) {
+        self.renderer_data().register_default_font(font_bytes, alias);
     }
 
     pub fn run_ui(&self, builder: ElementBuilder) {
@@ -71,6 +79,14 @@ impl Backend {
 
     pub(crate) fn take_window(&self, id: &WindowId) -> Option<Window> {
         self.windows.borrow_mut().remove(id)
+    }
+
+    pub fn renderer_data(&self) -> RwLockReadGuard<RendererData> {
+        self.backend.renderer_data()
+    }
+
+    pub fn weak_inner(&self) -> Weak<lumi2d::Backend> {
+        Arc::downgrade(&self.backend)
     }
 }
 

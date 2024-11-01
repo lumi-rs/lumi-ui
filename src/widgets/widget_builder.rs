@@ -2,7 +2,7 @@ use enum_dispatch::enum_dispatch;
 
 use crate::{backend::Backend, elements::window::{Window, WindowBuilder}};
 
-use super::{rectangle::RectangleBuilder, root::RootBuilder, Widget};
+use super::{rectangle::RectangleBuilder, root::RootBuilder, text::TextBuilder, Widget};
 
 
 #[derive(Debug)]
@@ -10,7 +10,8 @@ use super::{rectangle::RectangleBuilder, root::RootBuilder, Widget};
 pub enum WidgetBuilder {
     Root(RootBuilder),
     Window(WindowBuilder),
-    Rectangle(RectangleBuilder)
+    Rectangle(RectangleBuilder),
+    TextBuilder(TextBuilder)
 }
 
 

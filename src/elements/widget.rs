@@ -38,7 +38,7 @@ impl WidgetElement {
 }
 
 impl ElementRefTrait for WidgetElementRef {
-    fn upgrade(&self) -> Option<Element> {
+    fn upgrade_element(&self) -> Option<Element> {
         self.upgrade().map(|inner| WidgetElement { inner }.into())
     }
 }

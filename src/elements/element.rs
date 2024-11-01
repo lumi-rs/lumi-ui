@@ -26,7 +26,7 @@ pub enum ElementRef {
 
 #[enum_dispatch]
 pub trait ElementRefTrait {
-    fn upgrade(&self) -> Option<Element>;
+    fn upgrade_element(&self) -> Option<Element>;
 }
 
 #[enum_dispatch]
@@ -37,7 +37,7 @@ pub trait ElementTrait {
     fn render_into(&self, objects: &mut Vec<Element>);
     fn weak(&self) -> ElementRef;
     fn remove(&self) {
-        if let Some(parent) = self.parent().as_ref().and_then(|p| p.upgrade()) {
+        if let Some(parent) = self.parent().as_ref().and_then(|p| p.upgrade_element()) {
             let mut children = parent.children().write().unwrap();
             let index = children.iter().position(|child| {
                 self.identifier() == child.identifier()
@@ -60,7 +60,7 @@ impl Element {
         let inner = backend.create_window_inner(builder.details, builder.state);
         let window = Window::create(inner, parent, children);
 
-        window.render(Vec::new()).unwrap(); // Draw once, otherwise the window won't be shown yet on some platforms
+        window.render(&backend.renderer_data(), Vec::new()).unwrap(); // Draw once, otherwise the window won't be shown yet on some platforms
         backend.windows.borrow_mut().insert(window.id(), window.clone());
         
         Element::Window(window)
@@ -97,7 +97,7 @@ impl Element {
             Some(window.clone()) //window.clone().upgrade().map(|inner| Window { inner })
         } else {
             self.parent().as_ref()?
-            .upgrade()?
+            .upgrade_element()?
             .get_window()
         }
     }

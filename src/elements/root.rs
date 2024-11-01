@@ -13,7 +13,7 @@ pub struct RootElement {
 pub type RootElementRef = Weak<RwLock<Vec<Element>>>;
 
 impl ElementRefTrait for RootElementRef {
-    fn upgrade(&self) -> Option<Element> {
+    fn upgrade_element(&self) -> Option<Element> {
         self.upgrade().map(|children| RootElement { children }.into())
     }
 }

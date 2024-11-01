@@ -1,5 +1,5 @@
-use lumi2d::renderer::objects::Rounding;
-use lumi_ui::{backend::Backend, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait}, widgets::{rectangle::RectangleBuilder, widget_builder::WidgetBuilder}};
+use lumi2d::renderer::{objects::Rounding, text::TextOptions};
+use lumi_ui::{backend::Backend, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait}, widgets::{rectangle::RectangleBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
 use simple_logger::SimpleLogger;
 
 fn main() {
@@ -10,6 +10,8 @@ fn main() {
     .unwrap_or_else(|err| eprintln!("Failed to initialize logger: {err}"));
 
     Backend::init(|backend| {
+        backend.register_default_font("Inter", include_bytes!("Inter-Tight.ttf"));
+
         backend.run_ui({
             let root = ElementBuilder::root();
             let window_state = WindowState::default();
@@ -25,7 +27,7 @@ fn main() {
                 y: Signal::constant(100),
                 width: window_state.dimensions.relative(|dims| dims.width.saturating_sub(200)),
                 height: window_state.dimensions.relative(|dims| dims.height.saturating_sub(200)),
-                color: Signal::constant(0xFFFFFFFF),
+                color: Signal::constant(0xDDDDDDDD),
                 rounding: Signal::constant(Some(Rounding::new_uniform(10)))
             };
             let rect2 = RectangleBuilder {
@@ -36,11 +38,26 @@ fn main() {
                 color: Signal::constant(0xFF11EEAA),
                 rounding: Signal::constant(None)
             };
+            let text1 = TextBuilder {
+                x: rect2.x.clone(),
+                y: rect2.y.clone(),
+                width: rect2.width.clone(),
+                text: Signal::constant("Hello, world!".to_string()),
+                max_height: rect2.height.relative(|h| Some(*h)),
+                options: Signal::constant(TextOptions {
+                    size: 42.0,
+                    italic: true,
+                    underline: true,
+                    ..Default::default()
+                })
+            };
             
             window.child(
-                WidgetBuilder::Rectangle(rect1)
+                rect1.into()
             ).child(
-                WidgetBuilder::Rectangle(rect2)
+                rect2.into()
+            ).child(
+                text1.into()
             );
 
             root

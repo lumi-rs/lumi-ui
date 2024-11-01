@@ -1,4 +1,4 @@
-use lumi2d::{backend::{events::WindowEvent, windows::{Window as LumiWindow, WindowDetails, WindowId, WindowTrait}}, renderer::{RResult, Renderer, RendererTrait}, structs::{Dimensions, Position}, Object};
+use lumi2d::{backend::{events::WindowEvent, renderer_data::RendererData, windowing::window::{Window as LumiWindow, WindowDetails, WindowId, WindowTrait}}, renderer::{RResult, Renderer, RendererTrait}, structs::{Dimensions, Position}, Object};
 
 use std::{ops::Deref, sync::{Arc, RwLock, Weak}};
 
@@ -23,7 +23,7 @@ pub struct WindowElement {
 }
 
 impl ElementRefTrait for WindowRef {
-    fn upgrade(&self) -> Option<Element> {
+    fn upgrade_element(&self) -> Option<Element> {
         self.upgrade().map(|inner| Window { inner }.into())
     }
 }
@@ -103,20 +103,20 @@ impl Window {
         Arc::into_inner(self.inner).unwrap().inner.close();
     }
 
-    pub(crate) fn render(&self, objects: Vec<&Object>) -> RResult<()>{
+    pub(crate) fn render(&self, data: &RendererData, objects: Vec<&Object>) -> RResult<()>{
         let inner = &self.inner.inner;
-        inner.renderer.render(&inner.window, objects)
+        inner.renderer.render(&inner.window, data, objects)
     }
 
     /// Returns true if the window should be closed.
-    pub(crate) fn process_events(&self, _backend: &Backend, events: impl DoubleEndedIterator<Item = WindowEvent>) -> bool {
+    pub(crate) fn process_events(&self, backend: &Backend, events: impl Iterator<Item = WindowEvent>) -> bool {
         for event in events {
             match event {
                 WindowEvent::CloseRequested => {
                     return true;
                 },
                 WindowEvent::Redraw => {
-                    self.draw_children();
+                    self.draw_children(&backend.renderer_data());
                 },
                 WindowEvent::WindowSize(dim) => {
                     self.inner.inner.resized(dim);
@@ -131,7 +131,7 @@ impl Window {
             }
         }
         
-        self.draw_children();
+        self.draw_children(&backend.renderer_data());
         //let cursor = self.inner.inner.state.cursor_pos.get();
         //self.render(vec![&Objects::rectangle(cursor.x as _, cursor.y as _, 10, 10, 0xFFFFFFFF, None)]).unwrap();
 
@@ -142,7 +142,7 @@ impl Window {
         self.inner.inner.window.current_scale()
     }
 
-    fn draw_children(&self) {
+    fn draw_children(&self, data: &RendererData) {
         let mut elements = Vec::new();
 
         for child in self.children().read().unwrap().iter() {
@@ -159,7 +159,11 @@ impl Window {
 
         let refs: Vec<_> = objects.collect();
 
-        self.render(refs.iter().map(|o| o.deref()).collect()).unwrap();
+        self.render(data, refs.iter().map(|o| o.deref()).collect()).unwrap();
+    }
+
+    pub fn renderer(&self) -> &Renderer {
+        &self.inner.inner.renderer
     }
 }
 

@@ -2,7 +2,7 @@ use crate::{backend::Backend, elements::window::Window};
 
 use super::{widget_builder::WidgetBuilderTrait, Widget};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RootBuilder();
 
 impl WidgetBuilderTrait for RootBuilder {

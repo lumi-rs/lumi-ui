@@ -1,18 +1,19 @@
 use enum_dispatch::enum_dispatch;
 
 use lumi2d::Object;
-pub use rectangle::Rectangle;
 
 use crate::signals::SignalRef;
 
 pub mod widget_builder;
 pub mod root;
 pub mod rectangle;
+pub mod text;
 
 #[enum_dispatch(WidgetTrait)]
 #[derive(Debug)]
 pub enum Widget {
-    Rectangle(Rectangle)
+    Rectangle(rectangle::Rectangle),
+    Text(text::Text)
 }
 
 

@@ -6,7 +6,7 @@ use super::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait};
 
 #[derive(Debug)]
 pub struct Rectangle {
-    rectangle: Signal<Object>
+    pub rectangle: Signal<Object>
 }
 
 impl WidgetTrait for Rectangle {
@@ -15,7 +15,7 @@ impl WidgetTrait for Rectangle {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RectangleBuilder {
     pub x: Signal<i32>,
     pub y: Signal<i32>,
