@@ -3,12 +3,13 @@ use std::{fmt::{Debug, Display}, ops::Deref, sync::{Arc, RwLockReadGuard}};
 mod combined;
 mod root;
 mod r#const;
+mod future;
 mod relative;
 mod slots;
 
 use r#const::ConstSignal;
 
-pub use {slots::*, root::*};
+pub use {slots::*, root::*, future::*};
 
 
 #[derive(Debug)]
@@ -18,6 +19,8 @@ pub enum Signal<T> {
     //Relative(Arc<RelativeSignal<T, U>>),
 }
 
+unsafe impl<T: Send> Send for Signal<T> {}
+unsafe impl<T: Sync> Sync for Signal<T> {}
 
 pub trait SignalTrait<'a, T, U> {
     fn get(&'a self) -> SignalRef<'a, U>;
@@ -46,6 +49,7 @@ impl<T> Clone for Signal<T> {
         match self {
             Signal::Root(inner) => Signal::Root(inner.clone()),
             Signal::Const(inner) => Signal::Const(inner.clone())
+            //Signal::Future(inner) => Signal::Future(inner.clone())
             //Signal::Relative(relative) => Signal::Relative(relative.clone())
         }
     }
@@ -117,7 +121,7 @@ impl<T: 'static> SignalTrait<'_, T, T> for Signal<T> {
     fn get(&self) -> SignalRef<T> {
         match self {
             Signal::Root(root) => root.get(),
-            Signal::Const(inner) => inner.get(),
+            Signal::Const(inner) => inner.get()
             //Signal::Relative(relative) => relative.get()
         }
     }
@@ -177,6 +181,5 @@ impl<T: 'static> SignalTrait<'_, T, T> for Signal<T> {
                 signal
             }
         }
-
     }
 }

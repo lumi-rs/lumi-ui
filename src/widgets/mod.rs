@@ -8,12 +8,14 @@ pub mod widget_builder;
 pub mod root;
 pub mod rectangle;
 pub mod text;
+pub mod image;
 
 #[enum_dispatch(WidgetTrait)]
 #[derive(Debug)]
 pub enum Widget {
     Rectangle(rectangle::Rectangle),
-    Text(text::Text)
+    Text(text::Text),
+    Image(image::Image)
 }
 
 

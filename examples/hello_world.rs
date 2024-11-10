@@ -1,5 +1,5 @@
 use lumi2d::renderer::{objects::Rounding, text::TextOptions};
-use lumi_ui::{backend::Backend, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait}, widgets::{rectangle::RectangleBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
+use lumi_ui::{backend::Backend, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait}, widgets::{image::ImageBuilder, rectangle::RectangleBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
 use simple_logger::SimpleLogger;
 
 fn main() {
@@ -31,8 +31,8 @@ fn main() {
                 rounding: Signal::constant(Some(Rounding::new_uniform(10)))
             };
             let rect2 = RectangleBuilder {
-                x: rect1.x.relative(|x| x+50),
-                y: rect1.y.relative(|y| y+50),
+                x: rect1.x.relative(|x| x + 50),
+                y: rect1.y.relative(|y| y + 50),
                 width: rect1.width.clone(),
                 height: rect1.height.relative(|h| h.saturating_sub(100)),
                 color: Signal::constant(0xFF11EEAA),
@@ -51,6 +51,13 @@ fn main() {
                     ..Default::default()
                 })
             };
+            let image1 = ImageBuilder {
+                x: rect2.x.clone(),
+                y: rect2.y.relative(|y| y + 30),
+                width: rect2.width.clone(),
+                height: rect2.height.relative(|h| h.saturating_sub(30)),
+                bytes: Signal::constant(include_bytes!("./nori.gif").to_vec())
+            };
             
             window.child(
                 rect1.into()
@@ -58,6 +65,8 @@ fn main() {
                 rect2.into()
             ).child(
                 text1.into()
+            ).child(
+                image1.into()
             );
 
             root

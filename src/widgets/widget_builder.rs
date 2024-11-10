@@ -2,16 +2,17 @@ use enum_dispatch::enum_dispatch;
 
 use crate::{backend::Backend, elements::window::{Window, WindowBuilder}};
 
-use super::{rectangle::RectangleBuilder, root::RootBuilder, text::TextBuilder, Widget};
+use super::*;
 
 
 #[derive(Debug)]
 #[enum_dispatch(WidgetBuilderTrait)]
 pub enum WidgetBuilder {
-    Root(RootBuilder),
+    Root(root::RootBuilder),
     Window(WindowBuilder),
-    Rectangle(RectangleBuilder),
-    TextBuilder(TextBuilder)
+    Rectangle(rectangle::RectangleBuilder),
+    TextBuilder(text::TextBuilder),
+    Image(image::ImageBuilder)
 }
 
 
