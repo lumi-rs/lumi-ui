@@ -1,4 +1,4 @@
-use lumi2d::{renderer::images::CacheableImage, Object};
+use lumi2d::types::{Object, CacheableImage};
 
 use crate::{backend::Backend, elements::window::Window, signals::{FutureSignal, FutureState, Signal, SignalRef, SignalTrait}};
 
@@ -25,21 +25,21 @@ pub struct ImageBuilder {
 }
 
 impl WidgetBuilderTrait for ImageBuilder {
-    fn build(self, backend: &Backend, _window: Option<&Window>) -> Widget {
-        let signal = FutureSignal::empty();
-        let combined = (self.x, self.y, self.width, self.height, self.bytes, signal.relative(|a| a.clone()));
-        let _weak = backend.weak_inner();
+    fn build(self, _backend: &Backend, _window: Option<&Window>) -> Widget {
+        let decoder = FutureSignal::empty();
 
-        let clone = signal.clone();
-        let object = combined.relative(move |
-            (x,y, w, h, bytes, image)
-        | {
-            let (x, y, w, h, bytes) = (**x, **y, **w, **h, bytes.cloned());
-            
+        let clone = decoder.clone();
+        self.bytes.relative(move |bytes| {
+            let bytes = bytes.clone();
             clone.set(async move {
-                println!("a");
                 CacheableImage::from_encoded(&bytes)
             });
+        });
+
+        let combined = (self.x, self.y, self.width, self.height, decoder.relative(|a| a.clone()));
+
+        let object = combined.relative(move |(x,y, w, h, image)| {
+            let (x, y, w, h) = (**x, **y, **w, **h);
 
             match image.as_ref() {
                 FutureState::Running => {

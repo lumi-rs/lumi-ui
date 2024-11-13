@@ -1,6 +1,6 @@
 use enum_dispatch::enum_dispatch;
 
-use lumi2d::Object;
+use lumi2d::types::Object;
 
 use crate::signals::SignalRef;
 

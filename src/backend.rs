@@ -1,23 +1,26 @@
 use std::{cell::RefCell, collections::HashMap, sync::{Arc, RwLockReadGuard, Weak}};
 
 use log::info;
-use lumi2d::backend::{errors::BackendError, events::WindowEvent, renderer_data::{RendererData, RendererDataTrait}, windowing::window::{BackendEvent, WindowDetails, WindowId}, BackendTrait};
+use lumi2d::{backend::errors::BackendError, prelude::*};
 
-use crate::elements::{element::ElementTrait, element_builder::ElementBuilder, window::{Window, WindowInner, WindowState}};
+use crate::{custom_event::CustomEvent, elements::{element::ElementTrait, element_builder::ElementBuilder, window::{Window, WindowInner, WindowState}}};
 
 pub struct Backend {
-    pub(crate) backend: Arc<lumi2d::backend::Backend>,
+    pub(crate) backend: Arc<lumi2d::backend::Backend<CustomEvent>>,
     pub(crate) windows: RefCell<HashMap<WindowId, Window>>
 }
 
 impl Backend {
     pub fn init(callback: impl FnOnce(Backend) + Copy + Send + 'static) -> Result<(), BackendError> {
         info!("Initializing windowing backend...");
-        lumi2d::backend::Backend::create(move |lumi| {
+        lumi2d::backend::Backend::create_custom(move |lumi| {
             let backend = Self {
                 backend: Arc::new(lumi),
                 windows: RefCell::new(HashMap::new())
             };
+
+            crate::GLOBAL_SENDER.set(backend.backend.sender()).unwrap();
+
             callback(backend);
         })
     }
@@ -43,11 +46,18 @@ impl Backend {
         self.backend.subscribe_events(|events| {
             let mut grouped: HashMap<WindowId, Vec<WindowEvent>> = HashMap::new();
 
-            for BackendEvent { event, window_id } in events {
-                if let Some(vec) = grouped.get_mut(&window_id) {
-                    vec.push(event);
-                } else {
-                    grouped.insert(window_id, vec![event]);
+            for event in events {
+                match event {
+                    Event::Backend(BackendEvent { event, window_id }) => {
+                        if let Some(vec) = grouped.get_mut(&window_id) {
+                            vec.push(event);
+                        } else {
+                            grouped.insert(window_id, vec![event]);
+                        }
+                    },
+                    Event::Custom(custom) => match custom {
+                        CustomEvent::Callback(fn_once) => fn_once(),
+                    },
                 }
             }
 
@@ -85,7 +95,7 @@ impl Backend {
         self.backend.renderer_data()
     }
 
-    pub fn weak_inner(&self) -> Weak<lumi2d::Backend> {
+    pub fn weak_inner(&self) -> Weak<lumi2d::types::Backend<CustomEvent>> {
         Arc::downgrade(&self.backend)
     }
 }

@@ -1,4 +1,4 @@
-use lumi2d::{renderer::text::TextOptions, Object};
+use lumi2d::types::{Object, TextOptions};
 
 use crate::{backend::Backend, elements::window::Window, signals::{Signal, SignalRef, SignalTrait}};
 

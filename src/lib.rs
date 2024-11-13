@@ -1,14 +1,22 @@
-use std::sync::LazyLock;
+use std::sync::{LazyLock, OnceLock};
 
-use futures::executor::{LocalPool, ThreadPool};
+use crossbeam_channel::Sender;
+use custom_event::CustomEvent;
+use futures::executor::ThreadPool;
 use log::info;
+use lumi2d::types::Event;
 
 pub mod macros;
 
 pub mod backend;
+pub mod custom_event;
 pub mod elements;
 pub mod widgets;
 pub mod signals;
+
+
+pub static GLOBAL_SENDER: OnceLock<Sender<Event<CustomEvent>>> = OnceLock::new(); 
+
 
 pub static THREAD_POOL: LazyLock<ThreadPool> = LazyLock::new(|| {
     let pool = ThreadPool::builder()
@@ -20,10 +28,3 @@ pub static THREAD_POOL: LazyLock<ThreadPool> = LazyLock::new(|| {
 
     pool
 });
-
-thread_local! {
-    pub static LOCAL_POOL: LazyLock<LocalPool> = LazyLock::new(|| {
-        LocalPool::new()
-    });
-}
-

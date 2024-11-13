@@ -1,4 +1,4 @@
-use lumi2d::{renderer::objects::Rounding, Object};
+use lumi2d::types::{Rounding, Object};
 
 use crate::{backend::Backend, elements::window::Window, signals::{Signal, SignalRef, SignalTrait}};
 

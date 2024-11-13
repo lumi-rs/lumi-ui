@@ -1,5 +1,9 @@
 use std::{future::Future, marker::PhantomData, sync::RwLock};
 
+use lumi2d::types::Event;
+
+use crate::custom_event::CustomEvent;
+
 use super::*;
 
 
@@ -12,12 +16,7 @@ pub struct FutureSignal<T, U> {
 
 impl<T: Send + Sync + 'static, U: Future<Output = T> + Send + 'static> FutureSignal<T, U> {
     pub fn new(data: U) -> Self {
-        let signal = Self {
-            data: Arc::new(RwLock::new(FutureState::Running)),
-            slots: Arc::new(RwLock::new(Vec::new())),
-            notif_slots: Arc::new(RwLock::new(Vec::new())),
-            _phantom: PhantomData
-        };
+        let signal = Self::empty();
 
         signal.set(data);
 
@@ -57,10 +56,22 @@ impl<U: Send + Sync + 'static, T: Future<Output = U> + Send + 'static> SignalTra
 
     fn set(&self, data: T) {
         self.set_running_state();
+
+        let raw = Box::into_raw(Box::new(self.clone()));
+        let pointer = raw as usize;
+
         let clone = self.clone();
         crate::THREAD_POOL.spawn_ok(async move {
             *clone.data.write().unwrap() = FutureState::Completed(data.await);
-            todo!("Invoke subscribers")
+            
+            let sender = crate::GLOBAL_SENDER.get().unwrap();
+            sender.send(Event::Custom(CustomEvent::Callback(
+                Box::new(move || {
+                    let cast = pointer as *mut FutureSignal<U, T>;
+                    let boxed = unsafe { Box::from_raw(cast) };
+                    boxed.invoke();
+                })
+            ))).unwrap();
         });
 
         //crate::LOCAL_POOL.with(move |pool| {
@@ -122,7 +133,7 @@ impl<T: Clone> Clone for FutureState<T> {
 
 impl<T: Debug, U> Debug for FutureSignal<T, U> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("SignalInner")
+        f.debug_struct("FutureSignal")
         .field("data", &self.data)
         .field(
             "Callback count", 

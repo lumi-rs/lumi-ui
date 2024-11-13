@@ -1,4 +1,4 @@
-use lumi2d::{backend::{events::WindowEvent, renderer_data::RendererData, windowing::window::{Window as LumiWindow, WindowDetails, WindowId, WindowTrait}}, renderer::{RResult, Renderer, RendererTrait}, structs::{Dimensions, Position}, Object};
+use lumi2d::{prelude::*, renderer::RResult, types::Window as LumiWindow};
 
 use std::{ops::Deref, sync::{Arc, RwLock, Weak}};
 
