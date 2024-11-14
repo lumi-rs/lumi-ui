@@ -116,7 +116,7 @@ impl Window {
                     return true;
                 },
                 WindowEvent::Redraw => {
-                    self.draw_children(&backend.renderer_data());
+                    // self.draw_children(&backend.renderer_data());
                 },
                 WindowEvent::WindowSize(dim) => {
                     self.inner.inner.resized(dim);

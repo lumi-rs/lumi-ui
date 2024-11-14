@@ -46,17 +46,25 @@ impl Backend {
         self.backend.subscribe_events(|events| {
             let mut grouped: HashMap<WindowId, Vec<WindowEvent>> = HashMap::new();
 
+            let mut append_or_insert = |window_id, event| {
+                if let Some(vec) = grouped.get_mut(&window_id) {
+                    vec.push(event);
+                } else {
+                    grouped.insert(window_id, vec![event]);
+                }
+            };
+
             for event in events {
                 match event {
                     Event::Backend(BackendEvent { event, window_id }) => {
-                        if let Some(vec) = grouped.get_mut(&window_id) {
-                            vec.push(event);
-                        } else {
-                            grouped.insert(window_id, vec![event]);
-                        }
+                        append_or_insert(window_id, event);
                     },
                     Event::Custom(custom) => match custom {
+                        CustomEvent::BackendEvent(BackendEvent { event, window_id }) => {
+                            append_or_insert(window_id, event);
+                        },
                         CustomEvent::Callback(fn_once) => fn_once(),
+                        CustomEvent::Redraw(window) => append_or_insert(window, WindowEvent::Redraw)
                     },
                 }
             }

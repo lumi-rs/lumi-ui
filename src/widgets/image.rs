@@ -1,6 +1,6 @@
-use lumi2d::types::{Object, CacheableImage};
+use lumi2d::types::{CacheableImage, Event, Object};
 
-use crate::{backend::Backend, elements::window::Window, signals::{FutureSignal, FutureState, Signal, SignalRef, SignalTrait}};
+use crate::{backend::Backend, custom_event::CustomEvent, elements::window::Window, signals::{FutureSignal, FutureState, Signal, SignalRef, SignalTrait}};
 
 use super::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait};
 
@@ -25,15 +25,24 @@ pub struct ImageBuilder {
 }
 
 impl WidgetBuilderTrait for ImageBuilder {
-    fn build(self, _backend: &Backend, _window: Option<&Window>) -> Widget {
+    fn build(self, _backend: &Backend, window: Option<&Window>) -> Widget {
         let decoder = FutureSignal::empty();
 
         let clone = decoder.clone();
         self.bytes.relative(move |bytes| {
             let bytes = bytes.clone();
             clone.set(async move {
-                CacheableImage::from_encoded(&bytes)
+                let image = CacheableImage::from_encoded(&bytes);
+
+                image
             });
+        });
+
+        let window_id = window.map(|w| w.id());
+        decoder.subscribe(move |state| if let FutureState::Completed(_) = state {
+            if let Some(win) = window_id.clone() {
+                crate::global_send(Event::Custom(CustomEvent::Redraw(win)));
+            }
         });
 
         let combined = (self.x, self.y, self.width, self.height, decoder.relative(|a| a.clone()));
@@ -46,6 +55,7 @@ impl WidgetBuilderTrait for ImageBuilder {
                     Object::rectangle(x, y, w, h, 0xAAAAAAAA, None)
                 },
                 FutureState::Completed(image) => {
+
                     Object::image(x, y, w, h, image.clone())
                 }
             }

@@ -53,9 +53,9 @@ fn main() {
             };
             let image1 = ImageBuilder {
                 x: rect2.x.clone(),
-                y: rect2.y.relative(|y| y + 30),
+                y: rect2.y.relative(|y| y + 80),
                 width: rect2.width.clone(),
-                height: rect2.height.relative(|h| h.saturating_sub(30)),
+                height: rect2.height.relative(|h| h.saturating_sub(80)),
                 bytes: Signal::constant(include_bytes!("./nori.gif").to_vec())
             };
             

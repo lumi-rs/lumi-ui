@@ -1,3 +1,7 @@
+use lumi2d::types::{BackendEvent, WindowId};
+
 pub enum CustomEvent {
-    Callback(Box<dyn FnOnce() + Send + 'static>)
+    BackendEvent(BackendEvent),
+    Callback(Box<dyn FnOnce() + Send + 'static>),
+    Redraw(WindowId)
 }
