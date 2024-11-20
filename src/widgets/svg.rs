@@ -1,8 +1,6 @@
-use std::sync::Arc;
+use lumi2d::types::{CacheableSvg, Event, Object};
 
-use lumi2d::types::{CacheableSvg, Object};
-
-use crate::{backend::Backend, elements::window::Window, signals::{Signal, SignalRef, SignalTrait}};
+use crate::{backend::Backend, byte_source::ByteSource, custom_event::CustomEvent, elements::window::Window, signals::{FutureSignal, FutureState, Signal, SignalRef, SignalTrait}};
 
 use super::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait};
 
@@ -24,17 +22,41 @@ pub struct SvgBuilder {
     pub width: Signal<u32>,
     pub height: Signal<u32>,
     pub color: Signal<u32>,
-    pub bytes: Signal<Arc<[u8]>>
+    pub source: Signal<ByteSource>
 }
 
 impl WidgetBuilderTrait for SvgBuilder {
-    fn build(self, _backend: &Backend, _window: Option<&Window>) -> Widget {
-        let combined = (self.x, self.y, self.width, self.height, self.color, self.bytes);
+    fn build(self, _backend: &Backend, window: Option<&Window>) -> Widget {
+        let source = FutureSignal::empty();
 
-        let object = combined.relative(move |(x,y, w, h, color, bytes)| {
+        let clone = source.clone();
+        self.source.relative(move |byte_source| {
+            let byte_source = byte_source.clone();
+            clone.set(async move {
+                CacheableSvg::new(byte_source.get().await.unwrap())
+            });
+        });
+
+        let window_id = window.map(|w| w.id());
+        source.subscribe(move |state| if let FutureState::Completed(_) = state {
+            if let Some(win) = window_id.clone() {
+                crate::global_send(Event::Custom(CustomEvent::Redraw(win)));
+            }
+        });
+
+        let combined = (self.x, self.y, self.width, self.height, self.color, source.relative(|state| state.clone()));
+
+        let object = combined.relative(move |(x,y, w, h, color, source)| {
             let (x, y, w, h, color) = (**x, **y, **w, **h, **color);
 
-            Object::svg(x, y, w, h, CacheableSvg::new(bytes.cloned()), color)
+            match source.as_ref() {
+                FutureState::Running => {
+                    Object::rectangle(x, y, w, h, crate::LOADING_COLOR, None)
+                },
+                FutureState::Completed(svg) => {
+                    Object::svg(x, y, w, h, svg.clone(), color)
+                }
+            }
         });
 
         Widget::Svg(Svg { object })

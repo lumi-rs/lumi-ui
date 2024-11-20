@@ -1,6 +1,6 @@
 use lumi2d::types::{CacheableImage, Event, Object};
 
-use crate::{backend::Backend, custom_event::CustomEvent, elements::window::Window, signals::{FutureSignal, FutureState, Signal, SignalRef, SignalTrait}};
+use crate::{backend::Backend, byte_source::ByteSource, custom_event::CustomEvent, elements::window::Window, signals::{FutureSignal, FutureState, Signal, SignalRef, SignalTrait}};
 
 use super::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait};
 
@@ -21,7 +21,7 @@ pub struct ImageBuilder {
     pub y: Signal<i32>,
     pub width: Signal<u32>,
     pub height: Signal<u32>,
-    pub bytes: Signal<Vec<u8>>
+    pub source: Signal<ByteSource>
 }
 
 impl WidgetBuilderTrait for ImageBuilder {
@@ -29,9 +29,10 @@ impl WidgetBuilderTrait for ImageBuilder {
         let decoder = FutureSignal::empty();
 
         let clone = decoder.clone();
-        self.bytes.relative(move |bytes| {
-            let bytes = bytes.clone();
+        self.source.relative(move |source| {
+            let source = source.clone();
             clone.set(async move {
+                let bytes = source.get().await.unwrap();
                 let image = CacheableImage::from_encoded(&bytes);
 
                 image
@@ -45,17 +46,16 @@ impl WidgetBuilderTrait for ImageBuilder {
             }
         });
 
-        let combined = (self.x, self.y, self.width, self.height, decoder.relative(|a| a.clone()));
+        let combined = (self.x, self.y, self.width, self.height, decoder.relative(|state| state.clone()));
 
         let object = combined.relative(move |(x,y, w, h, image)| {
             let (x, y, w, h) = (**x, **y, **w, **h);
 
             match image.as_ref() {
                 FutureState::Running => {
-                    Object::rectangle(x, y, w, h, 0xAAAAAAAA, None)
+                    Object::rectangle(x, y, w, h, crate::LOADING_COLOR, None)
                 },
                 FutureState::Completed(image) => {
-
                     Object::image(x, y, w, h, image.clone())
                 }
             }

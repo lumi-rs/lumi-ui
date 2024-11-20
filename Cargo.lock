@@ -1192,6 +1192,7 @@ dependencies = [
  "lumi2d",
  "reqwest",
  "simple_logger",
+ "ureq",
 ]
 
 [[package]]
