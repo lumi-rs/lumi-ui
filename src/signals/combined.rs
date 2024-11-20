@@ -85,3 +85,7 @@ impl_signal!((T, a, b), (U, c, d), (V, e, f));
 impl_signal!((T, a, b), (U, c, d), (V, e, f), (W, g, h));
 impl_signal!((T, a, b), (U, c, d), (V, e, f), (W, g, h), (X, i, j));
 impl_signal!((T, a, b), (U, c, d), (V, e, f), (W, g, h), (X, i, j), (Y, k, l));
+impl_signal!((T, a, b), (U, c, d), (V, e, f), (W, g, h), (X, i, j), (Y, k, l), (Z, m, n));
+impl_signal!((T, a, b), (U, c, d), (V, e, f), (W, g, h), (X, i, j), (Y, k, l), (Z, m, n), (Foo, o, p));
+impl_signal!((T, a, b), (U, c, d), (V, e, f), (W, g, h), (X, i, j), (Y, k, l), (Z, m, n), (Foo, o, p), (Bar, q, r));
+impl_signal!((T, a, b), (U, c, d), (V, e, f), (W, g, h), (X, i, j), (Y, k, l), (Z, m, n), (Foo, o, p), (Bar, q, r), (AnotherTypeIdentifier, s, t));
