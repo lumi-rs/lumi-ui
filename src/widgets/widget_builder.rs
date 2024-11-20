@@ -12,7 +12,8 @@ pub enum WidgetBuilder {
     Window(WindowBuilder),
     Rectangle(rectangle::RectangleBuilder),
     TextBuilder(text::TextBuilder),
-    Image(image::ImageBuilder)
+    Image(image::ImageBuilder),
+    Svg(svg::SvgBuilder)
 }
 
 

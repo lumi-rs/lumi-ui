@@ -1,5 +1,7 @@
+use std::ops::Add;
+
 use lumi2d::renderer::{objects::Rounding, text::TextOptions};
-use lumi_ui::{backend::Backend, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait}, widgets::{image::ImageBuilder, rectangle::RectangleBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
+use lumi_ui::{backend::Backend, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait}, widgets::{image::ImageBuilder, rectangle::RectangleBuilder, svg::SvgBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
 use simple_logger::SimpleLogger;
 
 fn main() {
@@ -56,7 +58,15 @@ fn main() {
                 y: rect2.y.relative(|y| y + 80),
                 width: rect2.width.clone(),
                 height: rect2.height.relative(|h| h.saturating_sub(80)),
-                bytes: Signal::constant(include_bytes!("./nori.gif").to_vec())
+                bytes: Signal::constant(include_bytes!("nori.gif").to_vec())
+            };
+            let svg1 = SvgBuilder {
+                x: (rect2.x.clone(), rect2.width.clone()).relative(|(x, w)| (**x).add(**w as i32).saturating_sub(70)),
+                y: rect2.y.relative(|y| y + 10),
+                width: Signal::constant(60),
+                height: Signal::constant(60),
+                color: Signal::constant(0xEEEEEEFF),
+                bytes: Signal::constant((*include_bytes!("home.svg")).into()),
             };
             
             window.child(
@@ -67,6 +77,8 @@ fn main() {
                 text1.into()
             ).child(
                 image1.into()
+            ).child(
+                svg1.into()
             );
 
             root

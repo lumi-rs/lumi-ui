@@ -9,13 +9,15 @@ pub mod root;
 pub mod rectangle;
 pub mod text;
 pub mod image;
+pub mod svg;
 
 #[enum_dispatch(WidgetTrait)]
 #[derive(Debug)]
 pub enum Widget {
     Rectangle(rectangle::Rectangle),
     Text(text::Text),
-    Image(image::Image)
+    Image(image::Image),
+    Svg(svg::Svg)
 }
 
 
