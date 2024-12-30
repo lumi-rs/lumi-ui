@@ -106,12 +106,18 @@ impl<T> Display for SignalRef<'_, T> where T: Display {
     }
 }
 
+impl<'a, T: Clone> Clone for SignalRef<'a, T> {
+    fn clone(&self) -> Self {
+        Self::Owned(self.cloned())
+    }
+}
+
 impl<'a, T: Clone> SignalRef<'a, T> {
     pub fn cloned(&self) -> T {
         match self {
-            SignalRef::RwLock(guard) => (*guard).clone(),
-            SignalRef::Ref(r) => (*r).clone(),
-            SignalRef::Owned(owned) => owned.clone(),
+            Self::RwLock(guard) => (*guard).clone(),
+            Self::Ref(r) => (*r).clone(),
+            Self::Owned(owned) => owned.clone(),
         }
     }
 }

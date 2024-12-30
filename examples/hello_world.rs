@@ -1,7 +1,7 @@
 use std::ops::Add;
 
 use lumi2d::renderer::{objects::Rounding, text::TextOptions};
-use lumi_ui::{backend::Backend, byte_source::ByteSource, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait}, widgets::{image::ImageBuilder, rectangle::RectangleBuilder, svg::SvgBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
+use lumi_ui::{backend::Backend, byte_source::ByteSource, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait}, widgets::{image::ImageBuilder, interact::InteractBuilder, rectangle::RectangleBuilder, svg::SvgBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
 use simple_logger::SimpleLogger;
 
 fn main() {
@@ -68,6 +68,27 @@ fn main() {
                 color: Signal::constant(0xEEEEEEFF),
                 source: Signal::constant(ByteSource::bytes(include_bytes!("home.svg")))
             };
+            let interact1 = InteractBuilder {
+                x: Signal::constant(10),
+                y: Signal::constant(10),
+                width: Signal::constant(100),
+                height: Signal::constant(100),
+                ..Default::default()
+            };
+            let rect3 = RectangleBuilder {
+                x: interact1.x.clone(),
+                y: interact1.y.clone(),
+                width: interact1.width.clone(),
+                height: interact1.height.clone(),
+                color: (interact1.hovered.clone(), interact1.click_left.clone()).relative(|(hovered, clicked)| if **clicked {
+                    0xFFAAAAFF
+                } else if **hovered {
+                    0xFFFFFFFF
+                } else {
+                    0xAAAAAAFF
+                }),
+                rounding: Signal::constant(None),
+            };
             
             window.child(
                 rect1.into()
@@ -79,6 +100,10 @@ fn main() {
                 image1.into()
             ).child(
                 svg1.into()
+            ).child(
+                interact1.into()
+            ).child(
+                rect3.into()
             );
 
             root

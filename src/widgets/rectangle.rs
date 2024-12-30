@@ -10,8 +10,8 @@ pub struct Rectangle {
 }
 
 impl WidgetTrait for Rectangle {
-    fn get_objects(&self) -> SignalRef<Object> {
-        self.rectangle.get()
+    fn get_objects(&self) -> Option<SignalRef<Object>> {
+        Some(self.rectangle.get())
     }
 }
 

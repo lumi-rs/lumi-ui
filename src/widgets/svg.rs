@@ -10,8 +10,8 @@ pub struct Svg {
 }
 
 impl WidgetTrait for Svg {
-    fn get_objects(&self) -> SignalRef<Object> {
-        self.object.get()
+    fn get_objects(&self) -> Option<SignalRef<Object>> {
+        Some(self.object.get())
     }
 }
 

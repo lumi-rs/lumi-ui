@@ -11,8 +11,8 @@ pub struct Text {
 }
 
 impl WidgetTrait for Text {
-    fn get_objects(&self) -> SignalRef<Object> {
-        self.paragraph.get()
+    fn get_objects(&self) -> Option<SignalRef<Object>> {
+        Some(self.paragraph.get())
     }
 
     fn expected_children(&self) -> usize {

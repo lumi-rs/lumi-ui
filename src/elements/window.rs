@@ -57,6 +57,9 @@ pub struct WindowInner {
 pub struct WindowState {
     pub dimensions: Signal<Dimensions>,
     pub cursor_pos: Signal<Position<f64>>,
+    pub click_left: Signal<bool>,
+    pub click_right: Signal<bool>,
+    pub click_middle: Signal<bool>,
     pub focused: Signal<bool>,
 }
 
@@ -94,6 +97,10 @@ impl Window {
         Arc::downgrade(&self.inner)
     }
 
+    pub(crate) fn innerest(&self) -> &WindowInner {
+        &self.inner.inner
+    }
+
     pub(crate) fn id(&self) -> WindowId {
         self.inner.inner.id()
     }
@@ -111,6 +118,7 @@ impl Window {
     /// Returns true if the window should be closed.
     pub(crate) fn process_events(&self, backend: &Backend, events: impl Iterator<Item = WindowEvent>) -> bool {
         for event in events {
+            let state = &self.innerest().state;
             match event {
                 WindowEvent::CloseRequested => {
                     return true;
@@ -122,10 +130,24 @@ impl Window {
                     self.inner.inner.resized(dim);
                 },
                 WindowEvent::CursorPos(pos) => {
-                    self.inner.inner.state.cursor_pos.set(pos)
+                    state.cursor_pos.set(pos)
                 },
+                WindowEvent::MouseButton(number, action) => {
+                    let down = match action {
+                        KeyAction::Press => true,
+                        KeyAction::Release => false,
+                        KeyAction::Hold => return false
+                    };
+                    
+                    match number {
+                        1 => state.click_left.set(down),
+                        2 => state.click_middle.set(down),
+                        3 => state.click_right.set(down),
+                        _ => {}
+                    };
+                }
                 WindowEvent::FocusChange(focus) => {
-                    self.inner.inner.state.focused.set(focus)
+                    state.focused.set(focus)
                 }
                 _ => {}
             }
@@ -153,7 +175,7 @@ impl Window {
         .iter()
         .filter_map(|element| {
             if let Element::Widget(widget_element) = element {
-                Some(widget_element.widget().get_objects())
+                widget_element.widget().get_objects()
             } else { None }
         });
 
@@ -188,6 +210,9 @@ impl Default for WindowState {
         Self {
             dimensions: Signal::new(Dimensions::new(0, 0)),
             cursor_pos: Signal::new(Position::new(0.0, 0.0)),
+            click_left: Signal::new(false),
+            click_right: Signal::new(false),
+            click_middle: Signal::new(false),
             focused: Signal::new(false)
         }
     }
