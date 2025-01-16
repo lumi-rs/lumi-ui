@@ -141,8 +141,8 @@ impl Window {
                     
                     match number {
                         1 => state.click_left.set(down),
-                        2 => state.click_middle.set(down),
-                        3 => state.click_right.set(down),
+                        2 => state.click_right.set(down),
+                        3 => state.click_middle.set(down),
                         _ => {}
                     };
                 }
