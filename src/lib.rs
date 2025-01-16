@@ -14,6 +14,7 @@ pub mod elements;
 pub mod widgets;
 pub mod signals;
 pub mod byte_source;
+pub mod callback;
 
 
 pub static LOADING_COLOR: u32 = 0x57595C66;
