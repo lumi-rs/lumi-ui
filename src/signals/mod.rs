@@ -1,4 +1,4 @@
-use std::{fmt::{Debug, Display}, ops::Deref, sync::{Arc, RwLockReadGuard}};
+use std::{cell::Ref, fmt::{Debug, Display}, ops::Deref, rc::Rc, sync::{Arc, RwLockReadGuard}};
 
 mod combined;
 mod root;
@@ -14,13 +14,10 @@ pub use {slots::*, root::*, future::*};
 
 #[derive(Debug)]
 pub enum Signal<T> {
-    Root(Arc<RootSignal<T>>),
-    Const(Arc<ConstSignal<T>>)
+    Root(Rc<RootSignal<T>>),
+    Const(Rc<ConstSignal<T>>)
     //Relative(Arc<RelativeSignal<T, U>>),
 }
-
-unsafe impl<T: Send> Send for Signal<T> {}
-unsafe impl<T: Sync> Sync for Signal<T> {}
 
 pub trait SignalTrait<'a, T, U> {
     fn get(&'a self) -> SignalRef<'a, U>;
@@ -37,7 +34,7 @@ pub trait SignalTrait<'a, T, U> {
 impl<T> Default for Signal<T> where T: Default {
     fn default() -> Self {
         Self::Root(
-            Arc::new(
+            Rc::new(
                 RootSignal::new(T::default())
             )
         )
@@ -47,8 +44,8 @@ impl<T> Default for Signal<T> where T: Default {
 impl<T> Clone for Signal<T> {
     fn clone(&self) -> Self {
         match self {
-            Signal::Root(inner) => Signal::Root(inner.clone()),
-            Signal::Const(inner) => Signal::Const(inner.clone())
+            Self::Root(inner) => Signal::Root(inner.clone()),
+            Self::Const(inner) => Signal::Const(inner.clone())
             //Signal::Future(inner) => Signal::Future(inner.clone())
             //Signal::Relative(relative) => Signal::Relative(relative.clone())
         }
@@ -59,12 +56,12 @@ impl<T> Clone for Signal<T> {
 impl<T> Signal<T> {
     pub fn new(data: T) -> Self {
         Self::Root(
-            Arc::new(RootSignal::new(data))
+            Rc::new(RootSignal::new(data))
         )
     }
 
     pub fn constant(data: T) -> Self {
-        Self::Const(Arc::new(ConstSignal {
+        Self::Const(Rc::new(ConstSignal {
             data
         }))
     }
@@ -73,9 +70,10 @@ impl<T> Signal<T> {
 
 #[derive(Debug)]
 pub enum SignalRef<'a, T> {
-    RwLock(RwLockReadGuard<'a, T>),
-    Ref(&'a T),
     Owned(T),
+    Reference(&'a T),
+    Ref(Ref<'a, T>),
+    RwLock(RwLockReadGuard<'a, T>)
 }
 
 impl<'a, T> Deref for SignalRef<'a, T> {
@@ -83,9 +81,10 @@ impl<'a, T> Deref for SignalRef<'a, T> {
 
     fn deref(&self) -> &T {
         match self {
-            SignalRef::RwLock(guard) => guard,
-            SignalRef::Ref(r) => r,
-            SignalRef::Owned(owned) => owned,
+            Self::Owned(owned) => owned,
+            Self::Reference(r) => r,
+            Self::Ref(r) => r,
+            Self::RwLock(guard) => guard
         }
     }
 }
@@ -93,9 +92,10 @@ impl<'a, T> Deref for SignalRef<'a, T> {
 impl<'a, T> AsRef<T> for SignalRef<'a, T> {
     fn as_ref(&self) -> &T {
         match self {
-            SignalRef::RwLock(guard) => guard,
-            SignalRef::Ref(r) => r,
-            SignalRef::Owned(owned) => owned,
+            Self::Owned(owned) => owned,
+            Self::Reference(r) => r,
+            Self::Ref(r) => r,
+            Self::RwLock(guard) => guard
         }
     }
 }
@@ -115,9 +115,10 @@ impl<'a, T: Clone> Clone for SignalRef<'a, T> {
 impl<'a, T: Clone> SignalRef<'a, T> {
     pub fn cloned(&self) -> T {
         match self {
-            Self::RwLock(guard) => (*guard).clone(),
-            Self::Ref(r) => (*r).clone(),
             Self::Owned(owned) => owned.clone(),
+            Self::Reference(r) => (*r).clone(),
+            Self::Ref(r) => (*r).clone(),
+            Self::RwLock(guard) => (*guard).clone()
         }
     }
 }

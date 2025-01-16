@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use super::{NotifSlot, Signal, SignalRef, SignalTrait, Slot};
 
@@ -15,7 +15,7 @@ impl<T> ConstSignal<T> {
 
 impl<T> SignalTrait<'_, T, T> for ConstSignal<T> {
     fn get(&self) -> SignalRef<T> {
-        SignalRef::Ref(&self.data)
+        SignalRef::Reference(&self.data)
     }
 
     fn set(&self, _data: T) {
@@ -34,7 +34,7 @@ impl<T> SignalTrait<'_, T, T> for ConstSignal<T> {
         let data = map_fn(&self.get());
         
         Signal::Const(
-            Arc::new(
+            Rc::new(
                 ConstSignal { data }
             )
         )
