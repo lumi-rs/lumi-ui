@@ -1,6 +1,6 @@
 use lumi2d::types::{Object, Position};
 
-use crate::{backend::Backend, elements::window::Window, signals::{Signal, SignalRef, SignalTrait}};
+use crate::{backend::Backend, callback::Callback, elements::window::Window, signals::{Signal, SignalRef, SignalTrait}};
 
 use super::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait};
 
@@ -24,6 +24,8 @@ pub struct InteractBuilder {
     pub click_left: Signal<bool>,
     pub click_right: Signal<bool>,
     pub click_middle: Signal<bool>,
+    pub clicked: Option<Callback>,
+    pub right_clicked: Option<Callback>
 }
 
 impl WidgetBuilderTrait for InteractBuilder {
@@ -49,14 +51,50 @@ impl WidgetBuilderTrait for InteractBuilder {
             };
         });
 
-        (self.hovered.clone(), state.click_left.clone()).subscribe(move |(hover, click)| {
-            self.click_left.set(**hover && **click);
+        let hovered = self.hovered.clone();
+        state.click_left.subscribe(move |down| {
+            let hover = *hovered.get();
+            if *down {
+                if hover {
+                    self.click_left.set(true);
+                }
+            } else if *self.click_left.get() {
+                if hover {
+                    if let Some(cb) = &self.clicked {
+                        cb.run();
+                    }
+                }
+                self.click_left.set(false);
+            }
         });
-        (self.hovered.clone(), state.click_right.clone()).subscribe(move |(hover, click)| {
-            self.click_right.set(**hover && **click);
+
+        let hovered = self.hovered.clone();
+        state.click_right.subscribe(move |down| {
+            let hover = *hovered.get();
+            if *down {
+                if hover {
+                    self.click_right.set(true);
+
+                    // Most right click actions are done on press instead of on release it seems, so we'll mimic that behaviour
+                    if let Some(cb) = &self.right_clicked {
+                        cb.run();
+                    }
+                }
+            } else if *self.click_right.get() {
+                self.click_right.set(false);
+            }
         });
-        (self.hovered.clone(), state.click_middle.clone()).subscribe(move |(hover, click)| {
-            self.click_middle.set(**hover && **click);
+
+        let hovered = self.hovered.clone();
+        state.click_middle.subscribe(move |down| {
+            let hover = *hovered.get();
+            if *down {
+                if hover {
+                    self.click_middle.set(true);
+                }
+            } else if *self.click_middle.get() {
+                self.click_middle.set(false);
+            }
         });
         
 
