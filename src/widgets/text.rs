@@ -20,7 +20,7 @@ impl WidgetTrait for Text {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct TextBuilder {
     pub x: Signal<i32>,
     pub y: Signal<i32>,

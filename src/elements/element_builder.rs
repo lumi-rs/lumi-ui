@@ -32,14 +32,18 @@ impl ElementBuilder {
         )
     }
 
-    pub fn child(&self, widget: WidgetBuilder) -> Self {
+    pub fn child(&self, element: ElementBuilder) -> Self {
+        self.inner.children.write().unwrap().push(element.clone());
+        element
+    }
+
+    pub fn child_widget(&self, widget: WidgetBuilder) -> Self {
         let element = Self::new(
             Vec::with_capacity(widget.expected_children()),
             widget
         );
 
-        self.inner.children.write().unwrap().push(element.clone());
-        element
+        self.child(element)
     }
 
     pub(crate) fn build(self, backend: &Backend, parent: Option<ElementRef>) -> Element {

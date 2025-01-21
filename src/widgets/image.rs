@@ -15,7 +15,7 @@ impl WidgetTrait for Image {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ImageBuilder {
     pub x: Signal<i32>,
     pub y: Signal<i32>,

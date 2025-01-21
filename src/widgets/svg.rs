@@ -15,7 +15,7 @@ impl WidgetTrait for Svg {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct SvgBuilder {
     pub x: Signal<i32>,
     pub y: Signal<i32>,

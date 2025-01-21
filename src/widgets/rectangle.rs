@@ -15,7 +15,7 @@ impl WidgetTrait for Rectangle {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct RectangleBuilder {
     pub x: Signal<i32>,
     pub y: Signal<i32>,

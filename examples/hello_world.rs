@@ -1,7 +1,7 @@
 use std::ops::Add;
 
 use lumi2d::renderer::{objects::Rounding, text::TextOptions};
-use lumi_ui::{backend::Backend, byte_source::ByteSource, callback::Callback, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait}, widgets::{image::ImageBuilder, interact::InteractBuilder, rectangle::RectangleBuilder, svg::SvgBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
+use lumi_ui::{backend::Backend, byte_source::ByteSource, callback::Callback, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait, Slot}, widgets::{image::ImageBuilder, interact::InteractBuilder, rectangle::RectangleBuilder, svg::SvgBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
 use simple_logger::SimpleLogger;
 
 fn main() {
@@ -17,7 +17,7 @@ fn main() {
         backend.run_ui({
             let root = ElementBuilder::root();
             let window_state = WindowState::default();
-            let window = root.child(
+            let window = root.child_widget(
                 WidgetBuilder::Window(WindowBuilder {
                     state: window_state.clone(),
                     ..Default::default()
@@ -81,6 +81,7 @@ fn main() {
                 })),
                 ..Default::default()
             };
+
             let rect3 = RectangleBuilder {
                 x: interact1.x.clone(),
                 y: interact1.y.clone(),
@@ -96,25 +97,98 @@ fn main() {
                 }),
                 rounding: Signal::constant(None),
             };
+
             
-            window.child(
+            window.child_widget(
                 rect1.into()
-            ).child(
+            ).child_widget(
                 rect2.into()
-            ).child(
+            ).child_widget(
                 text1.into()
-            ).child(
+            ).child_widget(
                 image1.into()
-            ).child(
+            ).child_widget(
                 svg1.into()
-            ).child(
+            ).child_widget(
                 interact1.into()
-            ).child(
+            ).child_widget(
                 rect3.into()
             );
+
+            slider(window.clone());
 
             root
         });
 
     }).expect("Failed to initialize LumiUI!");
+}
+
+fn slider(parent: ElementBuilder) {
+    let (x, y, width, height) = (150, 20, 200, 30);
+    let point_x = Signal::new(x - height as i32 / 2);
+    let progress = Signal::new(0.0);
+
+    let rect = RectangleBuilder {
+        x: Signal::constant(x),
+        y: Signal::constant(y + height as i32 / 4),
+        width: Signal::constant(width),
+        height: Signal::constant(height/2),
+        color: Signal::constant(0xAAAAAAFF),
+        rounding: Signal::constant(Some(Rounding::new_uniform(10))),
+        ..Default::default()
+    };
+
+    let overlay = RectangleBuilder {
+        color: Signal::constant(0xFF33FFFF),
+        width: progress.relative(move |prog| {
+            (width as f64 * prog) as u32
+        }),
+        ..rect.clone()
+    };
+
+    let point = RectangleBuilder {
+        x: point_x.clone(),
+        y: Signal::constant(y),
+        width: Signal::constant(height),
+        height: Signal::constant(height),
+        color: Signal::constant(0xFF33FFFF),
+        rounding: Signal::constant(Some(Rounding::new_uniform(100)))
+    };
+
+    let text = TextBuilder {
+        x: Signal::constant(x + width as i32 + 20),
+        y: Signal::constant(y),
+        text: progress.relative(|prog| {
+            format!("{:.1}%", prog * 100.0)
+        }),
+        options: Signal::constant(TextOptions {
+            size: 20.0,
+            ..Default::default()
+        }),
+        width: Signal::constant(80),
+        ..Default::default()
+    };
+
+    let interact = InteractBuilder {
+        x: Signal::constant(x),
+        y: Signal::constant(y),
+        width: Signal::constant(width),
+        height: Signal::constant(height),
+        mouse_drag: Some(Slot::new(move |pos: &lumi2d::prelude::Position<f64>| {
+            let new_x = (pos.x as i32).clamp(x, x + width as i32);
+            point_x.set(new_x - height as i32 / 2);
+
+            let offset = new_x - x;
+            progress.set(offset as f64 / width as f64);
+        })),
+        ..Default::default()
+    };
+
+
+    parent
+    .child_widget(rect.into())
+    .child_widget(overlay.into())
+    .child_widget(interact.into())
+    .child_widget(point.into())
+    .child_widget(text.into());
 }

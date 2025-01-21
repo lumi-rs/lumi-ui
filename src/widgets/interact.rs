@@ -1,6 +1,8 @@
+use std::ops::Deref;
+
 use lumi2d::types::{Object, Position};
 
-use crate::{backend::Backend, callback::Callback, elements::window::Window, signals::{Signal, SignalRef, SignalTrait}};
+use crate::{backend::Backend, callback::Callback, elements::window::Window, signals::{Signal, SignalRef, SignalTrait, Slot}};
 
 use super::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait};
 
@@ -25,14 +27,18 @@ pub struct InteractBuilder {
     pub click_right: Signal<bool>,
     pub click_middle: Signal<bool>,
     pub clicked: Option<Callback>,
-    pub right_clicked: Option<Callback>
+    pub right_clicked: Option<Callback>,
+    pub mouse_drag: Option<Slot<Position<f64>>>
 }
 
 impl WidgetBuilderTrait for InteractBuilder {
     fn build(self, _backend: &Backend, window: Option<&Window>) -> Widget {
         let state = &window.unwrap().innerest().state;
         let hovered = self.hovered.clone();
-
+        let click_left = self.click_left.clone();
+        let mouse_drag = self.mouse_drag.clone();
+        let cursor_pos = state.cursor_pos.clone();
+        
         state.cursor_pos.subscribe(move |pos| {
             // TODO: Optimize this somehow? I feel like this is going to be slow
             let combined = (self.x.clone(), self.y.clone(), self.width.clone(), self.height.clone());
@@ -42,13 +48,23 @@ impl WidgetBuilderTrait for InteractBuilder {
 
             if *hovered.get() {
                 if !is_within {
+                    // self.mouse_drag.set(None);
                     hovered.set(false);
+                } else {
+                    // self.mouse_drag.set(Some(pos.clone()));
                 }
             } else {
                 if is_within {
                     hovered.set(true);
+                    // self.mouse_drag.set(Some(pos.clone()));
                 }
             };
+
+            if let Some(cb) = &self.mouse_drag {
+                if *click_left.get() {
+                    cb.invoke(pos);
+                }
+            }
         });
 
         let hovered = self.hovered.clone();
@@ -57,6 +73,9 @@ impl WidgetBuilderTrait for InteractBuilder {
             if *down {
                 if hover {
                     self.click_left.set(true);
+                    if let Some(cb) = &mouse_drag {
+                        cb.invoke(cursor_pos.get().deref());
+                    }
                 }
             } else if *self.click_left.get() {
                 if hover {

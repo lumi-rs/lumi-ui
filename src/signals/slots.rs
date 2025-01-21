@@ -1,14 +1,14 @@
-use std::sync::Arc;
+use std::{fmt::Debug, rc::Rc};
 
 
 pub struct Slot<T> {
-    callback: Arc<dyn Fn(&T) + 'static>
+    callback: Rc<dyn Fn(&T) + 'static>
 }
 
 impl<T> Slot<T> {
     pub fn new(callback: impl Fn(&T) + 'static) -> Self {
         Self {
-            callback: Arc::new(callback)
+            callback: Rc::new(callback)
         }
     }
 
@@ -23,16 +23,22 @@ impl<T> Clone for Slot<T> {
     }
 }
 
+impl<T> Debug for Slot<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Slot { ... }")
+    }
+}
+
 
 
 pub struct NotifSlot {
-    callback: Arc<dyn Fn()>
+    callback: Rc<dyn Fn()>
 }
 
 impl NotifSlot {
     pub fn new(callback: impl Fn() + 'static) -> Self {
         Self {
-            callback: Arc::new(callback)
+            callback: Rc::new(callback)
         }
     }
 
@@ -44,5 +50,11 @@ impl NotifSlot {
 impl Clone for NotifSlot {
     fn clone(&self) -> Self {
         Self { callback: self.callback.clone() }
+    }
+}
+
+impl Debug for NotifSlot {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("NotifSlot { ... }")
     }
 }
