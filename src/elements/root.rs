@@ -2,15 +2,52 @@ use std::sync::{Arc, RwLock, Weak};
 
 use log::warn;
 
-use super::element::{Element, ElementRef, ElementRefTrait, ElementTrait};
+use crate::backend::Backend;
+
+use super::{element::{Element, ElementRef, ElementRefTrait, ElementTrait}, element_builder::{ElementBuilder, ElementBuilderTrait}};
 
 
 #[derive(Debug, Clone)]
 pub struct RootElement {
-    pub(crate) children: Arc<RwLock<Vec<Element>>>
+    children: Arc<RwLock<Vec<Element>>>
 }
 
 pub type RootElementRef = Weak<RwLock<Vec<Element>>>;
+
+#[derive(Debug)]
+pub struct RootElementBuilder {
+    children: RwLock<Vec<ElementBuilder>>
+}
+
+impl ElementBuilderTrait for Arc<RootElementBuilder> {
+    fn children(&self) ->  &RwLock<Vec<ElementBuilder>> {
+        &self.children
+    }
+
+    fn build(self, backend: &Backend, _parent: Option<ElementRef>) -> Element {
+        let inner = Arc::into_inner(self).unwrap();
+        let children = inner.children.into_inner().unwrap();
+
+        let temp_children = Arc::new(RwLock::new(Vec::with_capacity(children.len())));
+        let element = Element::Root(RootElement { children: temp_children.clone() });
+
+        let new_children = children.into_iter().map(|builder| { 
+            builder.build(backend, Some(element.weak().clone()))
+        });
+        
+        *temp_children.write().unwrap() = new_children.collect();
+
+        element
+    }
+}
+
+impl RootElementBuilder {
+    pub fn new() -> Self {
+        Self {
+            children: RwLock::new(Vec::with_capacity(1))
+        }
+    }
+}
 
 impl ElementRefTrait for RootElementRef {
     fn upgrade_element(&self) -> Option<Element> {

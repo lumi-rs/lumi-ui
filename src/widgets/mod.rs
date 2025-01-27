@@ -5,7 +5,6 @@ use lumi2d::types::Object;
 use crate::signals::SignalRef;
 
 pub mod widget_builder;
-pub mod root;
 pub mod rectangle;
 pub mod text;
 pub mod image;

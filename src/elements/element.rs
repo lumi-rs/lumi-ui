@@ -17,7 +17,7 @@ pub enum Element {
 }
 
 #[enum_dispatch(ElementRefTrait)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ElementRef {
     Root(RootElementRef),
     Widget(WidgetElementRef),
@@ -49,10 +49,12 @@ pub trait ElementTrait {
 
 impl Element {
     pub(crate) fn new_widget(parent: Option<ElementRef>, children: Vec<Element>, widget: Widget) -> Self {
-        Self::new(
-            parent,
-            children,
-            widget
+        Self::Widget(
+            WidgetElement::new(
+                parent,
+                widget,
+                RwLock::new(children)
+            )
         )
     }
 
@@ -80,16 +82,6 @@ impl Element {
         self.children().write().unwrap().push(element.clone());
 
         element
-    }
-
-    pub(crate) fn new(parent: Option<ElementRef>, children: Vec<Element>, widget: Widget) -> Self {
-        Self::Widget(
-            WidgetElement::new(
-                parent,
-                widget,
-                RwLock::new(children)
-            )
-        )
     }
 
     pub fn get_window(&self) -> Option<Window> {

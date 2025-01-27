@@ -8,7 +8,6 @@ use super::*;
 #[derive(Debug)]
 #[enum_dispatch(WidgetBuilderTrait)]
 pub enum WidgetBuilder {
-    Root(root::RootBuilder),
     Window(WindowBuilder),
     Rectangle(rectangle::RectangleBuilder),
     TextBuilder(text::TextBuilder),

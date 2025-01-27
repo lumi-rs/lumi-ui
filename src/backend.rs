@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, sync::{Arc, RwLockReadGuard, Weak
 use log::info;
 use lumi2d::{backend::errors::BackendError, prelude::*};
 
-use crate::{custom_event::CustomEvent, elements::{element::ElementTrait, element_builder::ElementBuilder, window::{Window, WindowInner, WindowState}}};
+use crate::{custom_event::CustomEvent, elements::{element::ElementTrait, element_builder::{ElementBuilder, ElementBuilderTrait}, window::{Window, WindowInner, WindowState}}};
 
 pub struct Backend {
     pub(crate) backend: Arc<lumi2d::backend::Backend<CustomEvent>>,
