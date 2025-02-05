@@ -25,7 +25,7 @@ pub struct ImageBuilder {
 }
 
 impl WidgetBuilderTrait for ImageBuilder {
-    fn build(self, _backend: &Backend, window: Option<&Window>) -> Widget {
+    fn build(&self, _backend: &Backend, window: Option<&Window>) -> Widget {
         let decoder = FutureSignal::empty();
 
         let clone = decoder.clone();
@@ -46,7 +46,7 @@ impl WidgetBuilderTrait for ImageBuilder {
             }
         });
 
-        let combined = (self.x, self.y, self.width, self.height, decoder.relative(|state| state.clone()));
+        let combined = (self.x.clone(), self.y.clone(), self.width.clone(), self.height.clone(), decoder.relative(|state| state.clone()));
 
         let object = combined.relative(move |(x,y, w, h, image)| {
             let (x, y, w, h) = (**x, **y, **w, **h);

@@ -26,7 +26,7 @@ pub struct SvgBuilder {
 }
 
 impl WidgetBuilderTrait for SvgBuilder {
-    fn build(self, _backend: &Backend, window: Option<&Window>) -> Widget {
+    fn build(&self, _backend: &Backend, window: Option<&Window>) -> Widget {
         let source = FutureSignal::empty();
 
         let clone = source.clone();
@@ -44,7 +44,7 @@ impl WidgetBuilderTrait for SvgBuilder {
             }
         });
 
-        let combined = (self.x, self.y, self.width, self.height, self.color, source.relative(|state| state.clone()));
+        let combined = (self.x.clone(), self.y.clone(), self.width.clone(), self.height.clone(), self.color.clone(), source.relative(|state| state.clone()));
 
         let object = combined.relative(move |(x,y, w, h, color, source)| {
             let (x, y, w, h, color) = (**x, **y, **w, **h, **color);

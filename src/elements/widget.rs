@@ -53,12 +53,15 @@ impl ElementTrait for WidgetElement {
     fn children(&self) -> &RwLock<Vec<Element>> {
         &self.inner.children
     }
+
     fn parent(&self) -> &Option<ElementRef> {
         &self.inner.parent
     }
+
     fn identifier(&self) -> u64 {
         self.inner.identifier
     }
+
     fn render_into(&self, objects: &mut Vec<Element>) {
         objects.push(self.clone().into());
 
@@ -66,6 +69,7 @@ impl ElementTrait for WidgetElement {
             child.render_into(objects)
         }
     }
+    
     fn weak(&self) -> ElementRef {
         ElementRef::Widget(Arc::downgrade(&self.inner))
     }
@@ -76,15 +80,14 @@ impl ElementBuilderTrait for Arc<WidgetElementBuilder> {
         &self.children
     }
 
-    fn build(self, backend: &Backend, parent: Option<ElementRef>) -> Element {
-        let inner = Arc::into_inner(self).unwrap();
-        let children = inner.children.into_inner().unwrap();
+    fn build(&self, backend: &Backend, parent: Option<ElementRef>) -> Element {
+        let children = self.children.read().unwrap();
         let window = parent.as_ref()
         .and_then(|p| p.upgrade_element())
         .and_then(|p| p.get_window());
         
         // TODO: Make this part of the trait somehow?
-        let element = match inner.widget {
+        let element = match &self.widget {
             WidgetBuilder::Window(builder) => Element::create_window(
                 backend,
                 parent,
@@ -103,7 +106,7 @@ impl ElementBuilderTrait for Arc<WidgetElementBuilder> {
         {
             let mut new_children = element.children().write().unwrap();
 
-            *new_children = children.into_iter()
+            *new_children = children.iter()
             .map(|child| child.build(backend, Some(element.weak())))
             .collect();
         }

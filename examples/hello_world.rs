@@ -1,7 +1,7 @@
-use std::ops::Add;
+use std::{ops::Add, sync::Arc};
 
 use lumi2d::renderer::{objects::Rounding, text::TextOptions};
-use lumi_ui::{backend::Backend, byte_source::ByteSource, callback::Callback, elements::{element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait, Slot}, widgets::{image::ImageBuilder, interact::InteractBuilder, rectangle::RectangleBuilder, svg::SvgBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
+use lumi_ui::{backend::Backend, byte_source::ByteSource, callback::Callback, elements::{dynamic::DynamicElementBuilder, element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait, Slot}, widgets::{image::ImageBuilder, interact::InteractBuilder, rectangle::RectangleBuilder, svg::SvgBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
 use simple_logger::SimpleLogger;
 
 fn main() {
@@ -98,6 +98,66 @@ fn main() {
                 rounding: Signal::constant(None),
             };
 
+            let switch_state = Signal::new(false);
+
+            let state_clone = switch_state.clone();
+            let switch = InteractBuilder {
+                x: Signal::constant(20),
+                y: Signal::constant(300),
+                width: Signal::constant(50),
+                height: Signal::constant(50),
+                clicked: Some(Callback::new(move || {
+                    let current = *state_clone.get();
+                    state_clone.set(!current);
+                })),
+                ..Default::default()
+            };
+            let switch_bg = RectangleBuilder {
+                x: Signal::constant(20),
+                y: Signal::constant(300),
+                width: Signal::constant(50),
+                height: Signal::constant(50),
+                color: switch_state.relative(|state| {
+                    if *state {
+                        0x00FF00FF
+                    } else {
+                        0xFF0000FF
+                    }
+                }),
+                ..Default::default()
+            };
+
+            let dynamic_element = Arc::new(DynamicElementBuilder::new(
+                switch_state,
+                move |state, parent| {
+                    if *state {
+                        let window = WindowBuilder {
+                            ..Default::default()
+                        };
+
+                        let text = TextBuilder {
+                            x: window.state.dimensions.relative(|dim| dim.width as i32 - 100),
+                            y: Signal::constant(20),
+                            width: Signal::constant(50),
+                            text: Signal::constant("Hehe window".to_string()),
+                            ..Default::default()
+                        };
+
+                        parent.child_widget(window.into()).child_widget(text.into());
+                    } else {
+                        let rect = TextBuilder {
+                            x: Signal::constant(20),
+                            y: Signal::constant(350),
+                            width: Signal::constant(150),
+                            text: Signal::constant("Toggle window!".to_string()),
+                            ..Default::default()
+                        };
+
+                        parent.child_widget(rect.into());
+                    }
+                }
+            ));
+
             
             window.child_widget(
                 rect1.into()
@@ -113,7 +173,11 @@ fn main() {
                 interact1.into()
             ).child_widget(
                 rect3.into()
-            );
+            ).child_widget(
+                switch.into()
+            ).child_widget(
+                switch_bg.into()
+            ).child(dynamic_element.into());
 
             slider(window.clone());
 

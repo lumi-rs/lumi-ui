@@ -4,7 +4,7 @@ use enum_dispatch::enum_dispatch;
 
 use crate::{backend::Backend, widgets::{Widget, WidgetTrait}};
 
-use super::{root::*, widget::*, window::*};
+use super::{dynamic::*, root::*, widget::*, window::*};
 
 
 
@@ -13,7 +13,8 @@ use super::{root::*, widget::*, window::*};
 pub enum Element {
     Root(RootElement),
     Widget(WidgetElement),
-    Window(Window)
+    Window(Window),
+    Dynamic(DynamicElement)
 }
 
 #[enum_dispatch(ElementRefTrait)]
@@ -21,7 +22,8 @@ pub enum Element {
 pub enum ElementRef {
     Root(RootElementRef),
     Widget(WidgetElementRef),
-    Window(WindowRef)
+    Window(WindowRef),
+    Dynamic(DynamicElementRef)
 }
 
 #[enum_dispatch]
@@ -36,13 +38,19 @@ pub trait ElementTrait {
     fn identifier(&self) -> u64;
     fn render_into(&self, objects: &mut Vec<Element>);
     fn weak(&self) -> ElementRef;
+    fn destruct(self, _backend: &Backend) where Self: Sized {
+    }
     fn remove(&self) {
         if let Some(parent) = self.parent().as_ref().and_then(|p| p.upgrade_element()) {
             let mut children = parent.children().write().unwrap();
             let index = children.iter().position(|child| {
                 self.identifier() == child.identifier()
             });
-            children.remove(index.unwrap());
+            if let Some(i) = index {
+                children.remove(i);
+            } else {
+                dbg!(&children);
+            }
         }
     }
 }
@@ -58,12 +66,12 @@ impl Element {
         )
     }
 
-    pub(crate) fn create_window(backend: &Backend, parent: Option<ElementRef>, children: Vec<Element>, builder: WindowBuilder) -> Self {
-        let inner = backend.create_window_inner(builder.details, builder.state);
+    pub(crate) fn create_window(backend: &Backend, parent: Option<ElementRef>, children: Vec<Element>, builder: &WindowBuilder) -> Self {
+        let inner = backend.create_window_inner(builder.details.clone(), builder.state.clone());
         let window = Window::create(inner, parent, children);
 
         window.render(&backend.renderer_data(), Vec::new()).unwrap(); // Draw once, otherwise the window won't be shown yet on some platforms
-        backend.windows.borrow_mut().insert(window.id(), window.clone());
+        backend.inner.windows.borrow_mut().insert(window.id(), window.clone());
         
         Element::Window(window)
     }

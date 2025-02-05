@@ -24,14 +24,13 @@ impl ElementBuilderTrait for Arc<RootElementBuilder> {
         &self.children
     }
 
-    fn build(self, backend: &Backend, _parent: Option<ElementRef>) -> Element {
-        let inner = Arc::into_inner(self).unwrap();
-        let children = inner.children.into_inner().unwrap();
+    fn build(&self, backend: &Backend, _parent: Option<ElementRef>) -> Element {
+        let children = self.children.read().unwrap();
 
         let temp_children = Arc::new(RwLock::new(Vec::with_capacity(children.len())));
         let element = Element::Root(RootElement { children: temp_children.clone() });
 
-        let new_children = children.into_iter().map(|builder| { 
+        let new_children = children.iter().map(|builder| { 
             builder.build(backend, Some(element.weak().clone()))
         });
         

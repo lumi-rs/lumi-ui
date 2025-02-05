@@ -20,5 +20,5 @@ pub enum WidgetBuilder {
 #[enum_dispatch]
 pub trait WidgetBuilderTrait {
     fn expected_children(&self) -> usize { 1 }
-    fn build(self, backend: &Backend, window: Option<&Window>) -> Widget;
+    fn build(&self, backend: &Backend, window: Option<&Window>) -> Widget;
 }

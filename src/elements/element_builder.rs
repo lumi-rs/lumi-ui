@@ -4,21 +4,22 @@ use enum_dispatch::enum_dispatch;
 
 use crate::{backend::Backend, elements::element::Element, widgets::widget_builder::{WidgetBuilder, WidgetBuilderTrait}};
 
-use super::{element::ElementRef, root::RootElementBuilder, widget::WidgetElementBuilder};
+use super::{dynamic::*, element::ElementRef, root::*, widget::*};
 
 #[enum_dispatch(ElementBuilderTrait)]
 #[derive(Debug, Clone)]
 pub enum ElementBuilder {
     Root(Arc<RootElementBuilder>),
-    Widget(Arc<WidgetElementBuilder>)
+    Widget(Arc<WidgetElementBuilder>),
+    Dynamic(Arc<DynamicElementBuilder>),
+    ChildContainer(ChildBuilderContainer)
 }
 
 
 #[enum_dispatch]
 pub trait ElementBuilderTrait {
     fn children(&self) -> &RwLock<Vec<ElementBuilder>>;
-    fn build(self, backend: &Backend, parent: Option<ElementRef>) -> Element;
-    // fn identifier(&self) -> u64;
+    fn build(&self, backend: &Backend, parent: Option<ElementRef>) -> Element;
 }
 
 

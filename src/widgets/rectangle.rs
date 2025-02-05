@@ -26,8 +26,8 @@ pub struct RectangleBuilder {
 }
 
 impl WidgetBuilderTrait for RectangleBuilder {
-    fn build(self, _backend: &Backend, _window: Option<&Window>) -> Widget {
-        let combined = (self.x, self.y, self.width, self.height, self.color, self.rounding);
+    fn build(&self, _backend: &Backend, _window: Option<&Window>) -> Widget {
+        let combined = (self.x.clone(), self.y.clone(), self.width.clone(), self.height.clone(), self.color.clone(), self.rounding.clone());
 
         let rectangle = combined.relative(|(x,y, w, h, c, r)| {
             Object::rectangle(**x, **y, **w, **h, **c, r.cloned())

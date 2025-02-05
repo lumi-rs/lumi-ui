@@ -31,13 +31,13 @@ pub struct TextBuilder {
 }
 
 impl WidgetBuilderTrait for TextBuilder {
-    fn build(self, backend: &Backend, _window: Option<&Window>) -> Widget {
-        let combined = (self.x, self.y, self.text, self.options, self.width, self.max_height);
-        let weak = backend.weak_inner();
+    fn build(&self, backend: &Backend, _window: Option<&Window>) -> Widget {
+        let combined = (self.x.clone(), self.y.clone(), self.text.clone(), self.options.clone(), self.width.clone(), self.max_height.clone());
+        let weak = backend.weak();
 
         let paragraph = combined.relative(move |(x, y, text, options, width, max_h)| {
             let backend = weak.upgrade().unwrap();
-            let paragraph = backend.data().create_paragraph(text.cloned(), **width, max_h.cloned(), options.cloned());
+            let paragraph = backend.backend.data().create_paragraph(text.cloned(), **width, max_h.cloned(), options.cloned());
 
             Object::paragraph(**x, **y, paragraph)
         });

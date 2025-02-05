@@ -19,7 +19,8 @@ pub type WindowRef = Weak<WindowElement>;
 pub struct WindowElement {
     pub(crate) parent: Option<ElementRef>,
     pub(crate) inner: WindowInner, // TODO: Make this Send + Sync, somehow
-    pub(crate) children: RwLock<Vec<Element>>
+    pub(crate) children: RwLock<Vec<Element>>,
+    identifier: u64
 }
 
 impl ElementRefTrait for WindowRef {
@@ -36,12 +37,18 @@ impl ElementTrait for Window {
         &self.inner.parent
     }
     fn identifier(&self) -> u64 {
-        Arc::as_ptr(&self.inner) as u64
+        self.inner.identifier //Arc::as_ptr(&self.inner) as u64
     }
     fn render_into(&self, _: &mut Vec<Element>) {
     }
     fn weak(&self) -> ElementRef {
         ElementRef::Window(Arc::downgrade(&self.inner))
+    }
+    fn destruct(self, backend: &Backend) {
+        if let Some(window) = backend.take_window(&self.id()) {
+            drop(window);
+            self.close();
+        }
     }
 }
 
@@ -71,7 +78,7 @@ pub struct WindowBuilder {
 }
 
 impl WidgetBuilderTrait for WindowBuilder {
-    fn build(self, _: &Backend, _: Option<&Window>) -> Widget {
+    fn build(&self, _: &Backend, _: Option<&Window>) -> Widget {
         unreachable!();
     }
 }
@@ -86,7 +93,8 @@ impl Window {
         let element = WindowElement {
             parent,
             inner,
-            children: RwLock::new(children)
+            children: RwLock::new(children),
+            identifier: fastrand::u64(..)
         };
 
         Window { inner: Arc::new(element) }

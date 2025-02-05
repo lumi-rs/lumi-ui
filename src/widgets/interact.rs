@@ -32,35 +32,33 @@ pub struct InteractBuilder {
 }
 
 impl WidgetBuilderTrait for InteractBuilder {
-    fn build(self, _backend: &Backend, window: Option<&Window>) -> Widget {
+    fn build(&self, _backend: &Backend, window: Option<&Window>) -> Widget {
+        let cloned = self.clone();
         let state = &window.unwrap().innerest().state;
         let hovered = self.hovered.clone();
         let click_left = self.click_left.clone();
         let mouse_drag = self.mouse_drag.clone();
         let cursor_pos = state.cursor_pos.clone();
+        let combined = (cloned.x, cloned.y, cloned.width, cloned.height);
         
         state.cursor_pos.subscribe(move |pos| {
             // TODO: Optimize this somehow? I feel like this is going to be slow
-            let combined = (self.x.clone(), self.y.clone(), self.width.clone(), self.height.clone());
             let (x, y, w, h) = combined.get().cloned();
             
             let is_within = pos_within(*x, *y, *w, *h, pos);
 
             if *hovered.get() {
                 if !is_within {
-                    // self.mouse_drag.set(None);
                     hovered.set(false);
                 } else {
-                    // self.mouse_drag.set(Some(pos.clone()));
                 }
             } else {
                 if is_within {
                     hovered.set(true);
-                    // self.mouse_drag.set(Some(pos.clone()));
                 }
             };
 
-            if let Some(cb) = &self.mouse_drag {
+            if let Some(cb) = &cloned.mouse_drag {
                 if *click_left.get() {
                     cb.invoke(pos);
                 }
@@ -72,18 +70,18 @@ impl WidgetBuilderTrait for InteractBuilder {
             let hover = *hovered.get();
             if *down {
                 if hover {
-                    self.click_left.set(true);
+                    cloned.click_left.set(true);
                     if let Some(cb) = &mouse_drag {
                         cb.invoke(cursor_pos.get().deref());
                     }
                 }
-            } else if *self.click_left.get() {
+            } else if *cloned.click_left.get() {
                 if hover {
-                    if let Some(cb) = &self.clicked {
+                    if let Some(cb) = &cloned.clicked {
                         cb.run();
                     }
                 }
-                self.click_left.set(false);
+                cloned.click_left.set(false);
             }
         });
 
@@ -92,15 +90,15 @@ impl WidgetBuilderTrait for InteractBuilder {
             let hover = *hovered.get();
             if *down {
                 if hover {
-                    self.click_right.set(true);
+                    cloned.click_right.set(true);
 
                     // Most right click actions are done on press instead of on release it seems, so we'll mimic that behaviour
-                    if let Some(cb) = &self.right_clicked {
+                    if let Some(cb) = &cloned.right_clicked {
                         cb.run();
                     }
                 }
-            } else if *self.click_right.get() {
-                self.click_right.set(false);
+            } else if *cloned.click_right.get() {
+                cloned.click_right.set(false);
             }
         });
 
@@ -109,10 +107,10 @@ impl WidgetBuilderTrait for InteractBuilder {
             let hover = *hovered.get();
             if *down {
                 if hover {
-                    self.click_middle.set(true);
+                    cloned.click_middle.set(true);
                 }
-            } else if *self.click_middle.get() {
-                self.click_middle.set(false);
+            } else if *cloned.click_middle.get() {
+                cloned.click_middle.set(false);
             }
         });
         
