@@ -183,7 +183,6 @@ fn main() {
 
             root
         });
-
     }).expect("Failed to initialize LumiUI!");
 }
 

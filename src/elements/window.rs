@@ -47,7 +47,7 @@ impl ElementTrait for Window {
     fn destruct(self, backend: &Backend) {
         if let Some(window) = backend.take_window(&self.id()) {
             drop(window);
-            self.close();
+            self.close(&backend.renderer_data());
         }
     }
 }
@@ -114,8 +114,8 @@ impl Window {
     }
 
     /// Must be called with the window taken out of the backend's list AND the Element tree first!
-    pub(crate) fn close(self) {
-        Arc::into_inner(self.inner).unwrap().inner.close();
+    pub(crate) fn close(self, renderer_data: &RendererData) {
+        Arc::into_inner(self.inner).unwrap().inner.close(renderer_data);
     }
 
     pub(crate) fn render(&self, data: &RendererData, objects: Vec<&Object>) -> RResult<()>{
@@ -198,8 +198,8 @@ impl Window {
 }
 
 impl WindowInner {
-    fn close(self) {
-        self.window.close()
+    fn close(self, renderer_data: &RendererData) {
+        self.window.close(renderer_data)
     }
 
     fn id(&self) -> WindowId {

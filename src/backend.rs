@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::{Rc, Weak}, sync::RwLockReadGuard};
+use std::{cell::{Ref, RefCell}, collections::HashMap, rc::{Rc, Weak}};
 
 use log::info;
 use lumi2d::{backend::errors::BackendError, prelude::*};
@@ -12,8 +12,8 @@ pub struct Backend {
 
 #[derive(Debug)]
 pub struct BackendInner {
-    pub(crate) backend: lumi2d::backend::Backend<CustomEvent>,
-    pub(crate) windows: RefCell<HashMap<WindowId, Window>>
+    pub(crate) windows: RefCell<HashMap<WindowId, Window>>,
+    pub(crate) backend: lumi2d::backend::Backend<CustomEvent>
 }
 
 impl Backend {
@@ -51,7 +51,7 @@ impl Backend {
 
         self.inner.backend.subscribe_events(|events| {
             let mut grouped: HashMap<WindowId, Vec<WindowEvent>> = HashMap::new();
-
+            
             let mut append_or_insert = |window_id, event| {
                 if let Some(vec) = grouped.get_mut(&window_id) {
                     vec.push(event);
@@ -80,7 +80,7 @@ impl Backend {
                 
                 self.resolve_events(window, events);
             }
-        })
+        });
     }
     
     fn resolve_events(&self, window_id: WindowId, events: impl DoubleEndedIterator<Item = WindowEvent>) {
@@ -95,10 +95,10 @@ impl Backend {
         if let Some(true) = result {
             self.take_window(&window_id).map(|win| {
                 win.remove();
-                win.close();
+                win.close(&self.renderer_data());
             });
             if self.inner.windows.borrow().is_empty() {
-                self.inner.backend.exit();
+                self.inner.backend.unsubscribe();
             }
         }
     }
@@ -107,7 +107,7 @@ impl Backend {
         self.inner.windows.borrow_mut().remove(id)
     }
 
-    pub fn renderer_data(&self) -> RwLockReadGuard<RendererData> {
+    pub fn renderer_data(&self) -> Ref<RendererData> {
         self.inner.backend.renderer_data()
     }
 
