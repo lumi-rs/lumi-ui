@@ -19,18 +19,18 @@ impl<T> SignalTrait<'_, T, T> for ConstSignal<T> {
     }
 
     fn set(&self, _data: T) {
-        panic!("Attempted to write to a const Signal!\nUse a root Signal instead.");
+        panic!("Attempted to write to a const Signal! Use a root Signal instead.");
     }
 
-    fn subscribe(&self, _callback: impl Fn(&T) + 'static) {}
+    fn subscribe(&self, _callback: impl FnMut(&T) + 'static) {}
 
     fn subscribe_slot(&self, _slot: Slot<T>) {}
 
-    fn notify(&self, _callback: impl Fn() + 'static) {}
+    fn notify(&self, _callback: impl FnMut() + 'static) {}
 
     fn notify_slot(&self, _slot: NotifSlot) {}
 
-    fn relative<V: 'static>(&self, map_fn: impl Fn(&T) -> V + 'static) -> Signal<V> {
+    fn relative<V: 'static>(&self, mut map_fn: impl FnMut(&T) -> V + 'static) -> Signal<V> {
         let data = map_fn(&self.get());
         
         Signal::Const(

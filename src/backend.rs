@@ -120,7 +120,7 @@ impl Backend {
 impl Drop for BackendInner {
     fn drop(&mut self) {
         info!("Exiting...");
-        self.backend.exit();
+        self.backend.unsubscribe();
     }
 }
 

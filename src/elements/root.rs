@@ -70,8 +70,9 @@ impl ElementTrait for RootElement {
     fn weak(&self) -> ElementRef {
         ElementRef::Root(Arc::downgrade(&self.children))
     }
-    fn remove(&self) {
-        warn!("Tried to remove the root element!")
+    fn remove(&self) -> Option<Element> {
+        warn!("Tried to remove the root element!");
+        None
     }
 }
 

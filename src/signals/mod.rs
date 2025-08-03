@@ -1,4 +1,4 @@
-use std::{cell::Ref, fmt::{Debug, Display}, ops::Deref, rc::Rc, sync::{Arc, RwLockReadGuard}};
+use std::{cell::{Cell, Ref}, fmt::{Debug, Display}, ops::Deref, rc::Rc, sync::{Arc, RwLockReadGuard}, time::{Duration, Instant}};
 
 mod combined;
 mod root;
@@ -8,6 +8,9 @@ mod relative;
 mod slots;
 
 use r#const::ConstSignal;
+use num_traits::AsPrimitive;
+
+use crate::{animations::easings::EasingFunction, frame_notifier::FrameListener};
 
 pub use {slots::*, root::*, future::*};
 
@@ -15,7 +18,7 @@ pub use {slots::*, root::*, future::*};
 #[derive(Debug)]
 pub enum Signal<T> {
     Root(Rc<RootSignal<T>>),
-    Const(Rc<ConstSignal<T>>)
+    Const(Rc<ConstSignal<T>>),
     //Relative(Arc<RelativeSignal<T, U>>),
 }
 
@@ -44,16 +47,14 @@ impl<T> Default for Signal<T> where T: Default {
 impl<T> Clone for Signal<T> {
     fn clone(&self) -> Self {
         match self {
-            Self::Root(inner) => Signal::Root(inner.clone()),
-            Self::Const(inner) => Signal::Const(inner.clone())
-            //Signal::Future(inner) => Signal::Future(inner.clone())
-            //Signal::Relative(relative) => Signal::Relative(relative.clone())
+            Self::Root(inner) => Self::Root(inner.clone()),
+            Self::Const(inner) => Self::Const(inner.clone())
         }
     }
 }
 
 
-impl<T> Signal<T> {
+impl<T: 'static> Signal<T> {
     pub fn new(data: T) -> Self {
         Self::Root(
             Rc::new(RootSignal::new(data))
@@ -61,9 +62,46 @@ impl<T> Signal<T> {
     }
 
     pub fn constant(data: T) -> Self {
-        Self::Const(Rc::new(ConstSignal {
-            data
-        }))
+        Self::Const(
+            Rc::new(ConstSignal {
+                data
+            })
+        )
+    }
+}
+
+impl<T: Clone + 'static + AsPrimitive<f32>> Signal<T> where f32: AsPrimitive<T> {
+    pub fn animate(&self, duration: Duration, easing: EasingFunction) -> Self {
+        let _clone = self.clone();
+        let previous = Cell::new(self.get().cloned());
+        let new_signal = Signal::new(self.get().cloned());
+        let cloned_new = new_signal.clone();
+        let easing = Rc::new(easing);
+
+        self.subscribe(move |new| {
+            let start = previous.replace(new.clone());
+            let end = new.clone();
+            let clone = cloned_new.clone();
+            let easing = easing.clone();
+            let start_time = Instant::now();
+
+            dbg!(start.as_(), end.as_());
+
+            let listener = FrameListener::new(move |time| {
+                let progress = (time - start_time).div_duration_f32(duration).min(1.0);
+                // log::debug!("Current progress: {:?}", progress);
+
+                clone.set(easing.calculate(&start, &end, progress));
+            }, Instant::now() + duration);
+
+            crate::LOCAL_FRAME_NOTIFIER.with(|notifier| {
+                notifier.add(listener);
+            });
+        });
+
+        // self.relative(|input| easing.calculate(input, progress));
+        
+        new_signal
     }
 }
 
@@ -129,47 +167,41 @@ impl<T: 'static> SignalTrait<'_, T, T> for Signal<T> {
         match self {
             Signal::Root(root) => root.get(),
             Signal::Const(inner) => inner.get()
-            //Signal::Relative(relative) => relative.get()
         }
     }
 
     fn set(&self, data: T) {
         match self {
             Signal::Root(root) => root.set(data),
-            Signal::Const(inner) => inner.set(data),
-            //Signal::Relative(relative) => relative.set(data)
+            Signal::Const(inner) => inner.set(data)
         }
     }
 
     fn subscribe(&self, callback: impl Fn(&T) + 'static) {
         match self {
             Signal::Root(root) => root.subscribe(callback),
-            Signal::Const(inner) => inner.subscribe(callback),
-            //Signal::Relative(relative) => relative.subscribe(callback)
+            Signal::Const(inner) => inner.subscribe(callback)
         }
     }
 
     fn subscribe_slot(&self, slot: Slot<T>) {
         match self {
             Signal::Root(root) => root.subscribe_slot(slot),
-            Signal::Const(inner) => inner.subscribe_slot(slot),
-            //Signal::Relative(relative) => relative.subscribe_slot(slot),
+            Signal::Const(inner) => inner.subscribe_slot(slot)
         }
     }
 
     fn notify(&self, callback: impl Fn() + 'static) {
         match self {
             Signal::Root(root) => root.notify(callback),
-            Signal::Const(inner) => inner.notify(callback),
-            //Signal::Relative(relative) => relative.notify(callback)
+            Signal::Const(inner) => inner.notify(callback)
         }
     }
 
     fn notify_slot(&self, slot: NotifSlot) {
         match self {
             Signal::Root(root) => root.notify_slot(slot),
-            Signal::Const(inner) => inner.notify_slot(slot),
-            //Signal::Relative(relative) => relative.notify_slot(slot),
+            Signal::Const(inner) => inner.notify_slot(slot)
         }
     }
 

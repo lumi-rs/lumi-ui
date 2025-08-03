@@ -1,4 +1,4 @@
-use std::{ops::Add, sync::Arc};
+use std::{ops::Add, sync::Arc, time::Duration};
 
 use lumi2d::renderer::{objects::Rounding, text::TextOptions};
 use lumi_ui::{backend::Backend, byte_source::ByteSource, callback::Callback, elements::{dynamic::DynamicElementBuilder, element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait, Slot}, widgets::{image::ImageBuilder, interact::InteractBuilder, rectangle::RectangleBuilder, svg::SvgBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
@@ -7,6 +7,9 @@ use simple_logger::SimpleLogger;
 fn main() {
     SimpleLogger::new()
     .with_level(log::LevelFilter::Debug)
+    .with_module_level("naga", log::LevelFilter::Warn) // Slows down window creation otherwise
+    .with_module_level("wgpu_core", log::LevelFilter::Warn)
+    .with_module_level("wgpu_hal", log::LevelFilter::Warn)
     .env()
     .init()
     .unwrap_or_else(|err| eprintln!("Failed to initialize logger: {err}"));
@@ -205,7 +208,7 @@ fn slider(parent: ElementBuilder) {
         color: Signal::constant(0xFF33FFFF),
         width: progress.relative(move |prog| {
             (width as f64 * prog) as u32
-        }),
+        }).animate(Duration::from_secs(3), lumi_ui::animations::easings::EasingFunction::Linear),
         ..rect.clone()
     };
 

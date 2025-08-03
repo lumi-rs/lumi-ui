@@ -1,6 +1,7 @@
 use std::{fmt::Debug, sync::RwLock};
 
 use enum_dispatch::enum_dispatch;
+use log::error;
 
 use crate::{backend::Backend, widgets::{Widget, WidgetTrait}};
 
@@ -38,20 +39,24 @@ pub trait ElementTrait {
     fn identifier(&self) -> u64;
     fn render_into(&self, objects: &mut Vec<Element>);
     fn weak(&self) -> ElementRef;
-    fn destruct(self, _backend: &Backend) where Self: Sized {
+    fn destruct(self, backend: &Backend) where Self: Sized {
+        for child in self.children().write().unwrap().drain(..) {
+            child.destruct(backend);
+        }
     }
-    fn remove(&self) {
+    fn remove(&self) -> Option<Element> {
         if let Some(parent) = self.parent().as_ref().and_then(|p| p.upgrade_element()) {
             let mut children = parent.children().write().unwrap();
             let index = children.iter().position(|child| {
                 self.identifier() == child.identifier()
             });
             if let Some(i) = index {
-                children.remove(i);
+                Some(children.remove(i))
             } else {
-                dbg!(&children);
+                error!("Could not remove {} from children: {:?}", self.identifier(), children);
+                None
             }
-        }
+        } else { None }
     }
 }
 

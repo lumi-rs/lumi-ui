@@ -1,6 +1,6 @@
 use lumi2d::{prelude::*, renderer::RResult, types::Window as LumiWindow};
 
-use std::{ops::Deref, sync::{Arc, RwLock, Weak}};
+use std::{ops::Deref, sync::{Arc, RwLock, Weak}, time::Instant};
 
 use crate::{backend::Backend, signals::{Signal, SignalTrait}, widgets::{widget_builder::WidgetBuilderTrait, Widget, WidgetTrait}};
 
@@ -45,6 +45,10 @@ impl ElementTrait for Window {
         ElementRef::Window(Arc::downgrade(&self.inner))
     }
     fn destruct(self, backend: &Backend) {
+        for child in self.children().write().unwrap().drain(..) {
+            child.destruct(backend);
+        }
+
         if let Some(window) = backend.take_window(&self.id()) {
             drop(window);
             self.close(&backend.renderer_data());
@@ -62,7 +66,7 @@ pub struct WindowInner {
 
 #[derive(Debug, Clone)]
 pub struct WindowState {
-    pub dimensions: Signal<Dimensions>,
+    pub dimensions: Signal<Dimensions<u32>>,
     pub cursor_pos: Signal<Position<f64>>,
     pub click_left: Signal<bool>,
     pub click_right: Signal<bool>,
@@ -135,7 +139,7 @@ impl Window {
                     // self.draw_children(&backend.renderer_data());
                 },
                 WindowEvent::WindowSize(dim) => {
-                    self.inner.inner.resized(dim);
+                    self.innerest().resized(dim, &backend.renderer_data());
                 },
                 WindowEvent::CursorPos(pos) => {
                     state.cursor_pos.set(pos)
@@ -160,6 +164,12 @@ impl Window {
                 _ => {}
             }
         }
+
+        crate::LOCAL_FRAME_NOTIFIER.with(|notifier| {
+            if notifier.run(Instant::now()) {
+                crate::global_send(Event::Custom(crate::custom_event::CustomEvent::Redraw(self.id())));
+            }
+        });
         
         self.draw_children(&backend.renderer_data());
         //let cursor = self.inner.inner.state.cursor_pos.get();
@@ -206,9 +216,9 @@ impl WindowInner {
         self.window.id()
     }
 
-    fn resized(&self, size: Dimensions) {
+    fn resized(&self, size: Dimensions<u32>, renderer_data: &RendererData) {
         self.state.dimensions.set(size);
-        self.renderer.recreate(&self.window);
+        self.renderer.recreate(&self.window, renderer_data);
     }
 }
 
