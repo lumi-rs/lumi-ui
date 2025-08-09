@@ -1,6 +1,7 @@
 use std::{ops::Add, sync::Arc, time::Duration};
 
-use lumi2d::renderer::{objects::Rounding, text::TextOptions};
+use lumi_ui::lumi2d::renderer::{objects::Rounding, text::TextOptions};
+use lumi_ui::lumi2d::types::Position;
 use lumi_ui::{backend::Backend, byte_source::ByteSource, callback::Callback, elements::{dynamic::DynamicElementBuilder, element_builder::ElementBuilder, window::{WindowBuilder, WindowState}}, signals::{Signal, SignalTrait, Slot}, widgets::{image::ImageBuilder, interact::InteractBuilder, rectangle::RectangleBuilder, svg::SvgBuilder, text::TextBuilder, widget_builder::WidgetBuilder}};
 use simple_logger::SimpleLogger;
 
@@ -15,7 +16,7 @@ fn main() {
     .unwrap_or_else(|err| eprintln!("Failed to initialize logger: {err}"));
 
     Backend::init(|backend| {
-        backend.register_default_font("Inter", include_bytes!("Inter-Tight.ttf"));
+        backend.register_default_font("Inter", include_bytes!("../../Inter-Tight.ttf"));
 
         backend.run_ui({
             let root = ElementBuilder::root();
@@ -61,7 +62,7 @@ fn main() {
                 y: rect2.y.relative(|y| y + 80),
                 width: rect2.width.clone(),
                 height: rect2.height.relative(|h| h.saturating_sub(80)),
-                source: Signal::constant(ByteSource::bytes(include_bytes!("nori.gif")))
+                source: Signal::constant(ByteSource::bytes(include_bytes!("../../nori.gif")))
             };
             let svg1 = SvgBuilder {
                 x: (rect2.x.clone(), rect2.width.clone()).relative(|(x, w)| (**x).add(**w as i32).saturating_sub(70)),
@@ -69,7 +70,7 @@ fn main() {
                 width: Signal::constant(60),
                 height: Signal::constant(60),
                 color: Signal::constant(0xEEEEEEFF),
-                source: Signal::constant(ByteSource::bytes(include_bytes!("home.svg")))
+                source: Signal::constant(ByteSource::bytes(include_bytes!("../../home.svg")))
             };
             let interact1 = InteractBuilder {
                 x: Signal::constant(10),
@@ -240,7 +241,7 @@ fn slider(parent: ElementBuilder) {
         y: Signal::constant(y),
         width: Signal::constant(width),
         height: Signal::constant(height),
-        mouse_drag: Some(Slot::new(move |pos: &lumi2d::prelude::Position<f64>| {
+        mouse_drag: Some(Slot::new(move |pos: &Position<f64>| {
             let new_x = (pos.x as i32).clamp(x, x + width as i32);
             point_x.set(new_x - height as i32 / 2);
 

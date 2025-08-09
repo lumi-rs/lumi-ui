@@ -1,0 +1,30 @@
+[package]
+name = "lumi-internal"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+clone-macro = "0.1.0"
+crossbeam-channel = "0.5.13"
+enum_dispatch = "0.3.13"
+fastrand = "2.1.1"
+futures = { version = "0.3.31", features = ["executor", "thread-pool"] }
+log = { version = "0.4" }
+lumi2d = { git = "https://github.com/lumi-rs/lumi2d.git" }
+num-traits = "0.2.19"
+reqwest = { version = "0.12.9", optional = true }
+ureq = { version = "2.10.1", optional = true }
+
+
+
+[features]
+default = ["ureq"]
+ureq = ["dep:ureq"]
+reqwest = ["dep:reqwest"]
+
+
+
+# [profile.release]
+# opt-level = 3
+# strip = "debuginfo"
+# lto = "fat"

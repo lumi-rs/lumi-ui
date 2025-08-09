@@ -1,0 +1,11 @@
+[package]
+name = "lumi-dylib"
+version = "0.0.1"
+edition = "2024"
+
+[lib]
+crate-type = ["dylib"]
+
+[dependencies]
+lumi-internal = { path = "../lumi-internal", version = "*" }
+

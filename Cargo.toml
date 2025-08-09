@@ -1,29 +1,25 @@
 [package]
 name = "lumi-ui"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
+
+[workspace]
+members = ["crates/*", "examples/*"]
 
 [dependencies]
-clone-macro = "0.1.0"
-crossbeam-channel = "0.5.13"
-enum_dispatch = "0.3.13"
-fastrand = "2.1.1"
-futures = { version = "0.3.31", features = ["executor", "thread-pool"] }
-log = { version = "0.4.22", features = ["max_level_debug", "release_max_level_info"] }
-lumi2d = { git = "https://github.com/lumi-rs/lumi2d.git" }
-num-traits = "0.2.19"
-reqwest = { version = "0.12.9", optional = true }
-ureq = { version = "2.10.1", optional = true }
-
-[dev-dependencies]
-simple_logger = "5.0.0"
-
+lumi-dylib = { path = "crates/lumi-dylib", optional = true }
+lumi-internal = { path = "crates/lumi-internal" }
 
 [features]
-default = ["ureq"]
-ureq = ["dep:ureq"]
-reqwest = ["dep:reqwest"]
+default = ["lumi-internal/ureq"]
+dynamic_linking = ["dep:lumi-dylib"]
+ureq = ["lumi-internal/ureq"]
+reqwest = ["lumi-internal/reqwest"]
 
+
+[dev-dependencies]
+log = "0.4"
+simple_logger = "5.0.0"
 
 
 # [profile.release]

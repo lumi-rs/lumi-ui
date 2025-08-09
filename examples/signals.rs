@@ -1,5 +1,5 @@
 
-use lumi_ui::{signals::{Signal, SignalTrait, Slot}, use_signals};
+use lumi_ui::signals::{Signal, SignalTrait, Slot};
 
 fn main() {
     let (one, two) = (Signal::new(1), Signal::new("test"));
@@ -31,12 +31,12 @@ fn main() {
 
 fn _old_main() {
     let a = Signal::new(2);
-    let relative = Signal::relative(&a.clone(), |a| a.to_string());
+    let _relative = Signal::relative(&a.clone(), |a| a.to_string());
     let b = Signal::new("hola");
     
-    use_signals!([a, b, relative] |a, b, relative| {
-        println!("{a} -> {relative}; {b}")
-    });
+    //use_signals!([a, b, relative] |a, b, relative| {
+    //    println!("{a} -> {relative}; {b}")
+    // });
 
     a.set(8);
     b.set("world");
